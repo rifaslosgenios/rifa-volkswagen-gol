@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-glow-pink: #FF2D78;
+  --color-glow-pink-hover: #E01A63;
+  --color-glow-pink-light: #FFF0F5;
+  --color-glow-lime: #C6F235;
+  --color-glow-lime-dark: #A6D21B;
+  --color-glow-dark: #111827;
+  --color-glow-gray: #F7F8FA;
+  --color-glow-border: #EAEAEA;
+  --font-heading: 'Montserrat', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+}
+
+@keyframes morphShape {
+  0% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+  50% { border-radius: 56% 44% 38% 62% / 60% 35% 65% 40%; }
+  100% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+}
+
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50% { transform: translateY(-7px) rotate(-6deg); }
+}
+
+.blob-lime {
+  border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+  animation: morphShape 12s ease-in-out infinite alternate;
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 3.5s ease-in-out infinite;
+}
+
+.vertical-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.shadow-glow-card {
+  box-shadow: 0 14px 32px -4px rgba(255, 45, 120, 0.15);
+}
+
+.shadow-glow-button {
+  box-shadow: 0 8px 22px -3px rgba(255, 45, 120, 0.45);
+}
+
+.shadow-glow-soft {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
