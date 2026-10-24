@@ -12,6 +12,9 @@ import {
   Ticket
 } from 'lucide-react';
 import { HERO_CAROUSEL_PHOTOS } from '../data/mockData';
+// Importaciones obligatorias para que Vite cargue los archivos en Vercel
+import mascotaImg from '../assets/mascota (1).png';
+import videoBolas from '../assets/animacion-bolas.mp4';
 
 interface HeroProps {
   onOpenPurchaseModal: () => void;
@@ -84,7 +87,7 @@ export const Hero: React.FC<HeroProps> = ({
       >
         <div className="relative">
           <img
-            src="/src/assets/mascota (1).png"
+            src={mascotaImg}
             alt="Mascota Rifa"
             className="w-full h-auto object-contain drop-shadow-2xl origin-top-left"
           />
@@ -140,7 +143,7 @@ export const Hero: React.FC<HeroProps> = ({
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src="/src/assets/animacion-bolas.mp4" type="video/mp4" />
+                <source src={videoBolas} type="video/mp4" />
               </video>
             </motion.div>
 
