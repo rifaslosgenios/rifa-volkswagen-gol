@@ -11,7 +11,6 @@ import { CountdownSection } from './components/CountdownSection';
 import { VehicleSpecs } from './components/VehicleSpecs';
 import { VehicleGallerySection } from './components/VehicleGallerySection';
 import { TicketSelector } from './components/TicketSelector';
-import { FlashPromoBanner } from './components/FlashPromoBanner';
 import { NotaryGuarantees } from './components/NotaryGuarantees';
 import { Testimonials } from './components/Testimonials';
 import { FaqSection } from './components/FaqSection';
@@ -103,14 +102,14 @@ export default function App() {
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
-          {/* Live Countdown & Numbers Progress Bar */}
-          <CountdownSection soldTicketsCount={currentSoldTotal} />
-
           {/* Vehicle Highlights & Specs (4 Cards) */}
           <VehicleSpecs onSelectSpec={handleOpenSpecDetail} />
 
           {/* Full Vehicle Gallery Section (40 Real Photos with Models) */}
           <VehicleGallerySection />
+
+          {/* Past Winners Testimonials */}
+          <Testimonials />
 
           {/* Ticket Selection Module (3 Tiers) */}
           <TicketSelector
@@ -118,17 +117,14 @@ export default function App() {
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
-          {/* Flash Promo Banner (Neon Lime & Pink) */}
-          <FlashPromoBanner onOpenPurchaseModal={() => handleOpenPurchase(TICKET_PACKAGES[1])} />
-
           {/* Notary Guarantees & Transparency */}
           <NotaryGuarantees
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
             onOpenLegalModal={() => setIsLegalModalOpen(true)}
           />
 
-          {/* Past Winners Testimonials */}
-          <Testimonials />
+          {/* Live Countdown & Numbers Progress Bar - MOVIDO JUSTO ANTES DE PREGUNTAS FRECUENTES */}
+          <CountdownSection soldTicketsCount={currentSoldTotal} />
 
           {/* FAQ Accordion */}
           <FaqSection />
