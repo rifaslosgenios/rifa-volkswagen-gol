@@ -76,14 +76,14 @@ export const Hero: React.FC<HeroProps> = ({
   return (
     <section className="relative pt-8 pb-0 lg:pt-20 lg:pb-0 overflow-hidden bg-white" data-purpose="hero-banner">
 
-      {/* MASCOTA Y BURBUJA (Acercada al perro y ligeramente ampliada) */}
+      {/* MASCOTA Y BURBUJA (Visible en celular con tamaño reducido) */}
       <motion.div
         initial={{ opacity: 0, x: -90 }}
         whileInView={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -90 }}
         viewport={{ once: false, amount: 0.1 }}
         transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute left-0 top-4 z-25 pointer-events-none hidden lg:block w-56 xl:w-68"
+        className="absolute left-0 top-4 z-25 pointer-events-none w-28 sm:w-36 lg:w-56 xl:w-68 opacity-80 lg:opacity-100"
       >
         <div className="relative">
           <img
@@ -98,12 +98,12 @@ export const Hero: React.FC<HeroProps> = ({
             transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             animate={{ rotate: [0, -1.5, 1.5, -1.5, 0], y: [0, -3, 0] }}
             transition={{ rotate: { repeat: Infinity, duration: 2.5, ease: "easeInOut" }, y: { repeat: Infinity, duration: 3, ease: "easeInOut" } }}
-            className="absolute top-3 right-[-110px] xl:right-[-125px] bg-white px-4 py-3 rounded-2xl shadow-2xl border-2 border-slate-100 max-w-[175px] xl:max-w-[190px] z-30 pointer-events-auto"
+            className="absolute top-3 right-[-80px] sm:right-[-110px] xl:right-[-125px] bg-white px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-100 max-w-[130px] sm:max-w-[175px] xl:max-w-[190px] z-30 pointer-events-auto hidden sm:block lg:block"
           >
             <div className="absolute -left-2 top-4 w-4 h-4 bg-white border-l-2 border-b-2 border-slate-100 transform rotate-45"></div>
-            <p className="text-[10px] sm:text-[11px] font-black text-[#111827] uppercase tracking-tight leading-snug text-center">
+            <p className="text-[9px] sm:text-[11px] font-black text-[#111827] uppercase tracking-tight leading-snug text-center">
               ¡A LA ORDEN, JOVEN! 🐶 <br />
-              <span className="text-[#E60012] text-[11px] sm:text-xs">¿CUÁNTOS NÚMEROS VA A LLEVAR?</span>
+              <span className="text-[#E60012] text-[10px] sm:text-xs">¿CUÁNTOS NÚMEROS VA A LLEVAR?</span>
             </p>
           </motion.div>
         </div>
@@ -113,7 +113,7 @@ export const Hero: React.FC<HeroProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 xl:gap-8 items-start pt-2 lg:pl-[240px] xl:pl-[300px]">
 
-          {/* COLUMNA 1 (IZQUIERDA): Título principal (levemente a la izquierda), Video e Iconos */}
+          {/* COLUMNA 1 (IZQUIERDA) */}
           <motion.div
             className="lg:col-span-5 w-full flex flex-col"
             variants={containerVariants}
@@ -122,8 +122,8 @@ export const Hero: React.FC<HeroProps> = ({
             exit="hidden"
             viewport={{ once: false, amount: 0.1 }}
           >
-            {/* Título con margen equilibrado para no tocar la burbuja pero respirar mejor */}
-            <div className="ml-2 sm:ml-6 lg:ml-12 xl:ml-16">
+            {/* Título */}
+            <div className="ml-16 sm:ml-24 lg:ml-12 xl:ml-16">
               <motion.div
                 variants={itemVariants}
                 className="font-heading font-black text-4xl sm:text-5xl lg:text-[42px] xl:text-[52px] leading-[1.05] tracking-tight text-[#111827] mb-6 pt-2"
@@ -135,7 +135,7 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
 
             {/* VIDEO */}
-            <motion.div variants={itemVariants} className="w-full xl:max-w-[460px] aspect-video bg-white rounded-3xl overflow-hidden shadow-xl border-2 border-slate-100 mb-4">
+            <motion.div variants={itemVariants} className="w-full xl:max-w-[460px] aspect-video bg-white rounded-3xl overflow-hidden shadow-xl border-2 border-slate-100 mb-4 z-10 relative">
               <video
                 autoPlay
                 loop
@@ -178,7 +178,7 @@ export const Hero: React.FC<HeroProps> = ({
             </motion.div>
           </motion.div>
 
-          {/* COLUMNA 2 (CENTRO): PRECIO, BOTONES Y CONTADOR (Espacio libre a ambos lados) */}
+          {/* COLUMNA 2 (CENTRO) */}
           <motion.div
             className="lg:col-span-3 z-10 w-full flex flex-col pt-0 lg:-mt-2 gap-5 items-start lg:ml-2 xl:ml-6"
             variants={containerVariants}
@@ -248,7 +248,7 @@ export const Hero: React.FC<HeroProps> = ({
             </motion.div>
           </motion.div>
 
-          {/* COLUMNA 3 (DERECHA): FOTO LIBERADA */}
+          {/* COLUMNA 3 (DERECHA) */}
           <motion.div
             className="lg:col-span-4 relative flex justify-end items-start pt-8 lg:-mt-12 xl:-mt-20"
             variants={rightColumnVariants}
