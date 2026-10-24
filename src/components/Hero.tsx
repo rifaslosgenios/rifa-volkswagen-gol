@@ -76,7 +76,7 @@ export const Hero: React.FC<HeroProps> = ({
   return (
     <section className="relative pt-8 pb-0 lg:pt-20 lg:pb-0 overflow-hidden bg-white" data-purpose="hero-banner">
 
-      {/* MASCOTA Y BURBUJA (Visible en celular con tamaño reducido) */}
+      {/* MASCOTA Y BURBUJA (Visible en celular y computadora) */}
       <motion.div
         initial={{ opacity: 0, x: -90 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -98,7 +98,7 @@ export const Hero: React.FC<HeroProps> = ({
             transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             animate={{ rotate: [0, -1.5, 1.5, -1.5, 0], y: [0, -3, 0] }}
             transition={{ rotate: { repeat: Infinity, duration: 2.5, ease: "easeInOut" }, y: { repeat: Infinity, duration: 3, ease: "easeInOut" } }}
-            className="absolute top-3 right-[-80px] sm:right-[-110px] xl:right-[-125px] bg-white px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-100 max-w-[130px] sm:max-w-[175px] xl:max-w-[190px] z-30 pointer-events-auto hidden sm:block lg:block"
+            className="absolute top-3 right-[-80px] sm:right-[-110px] xl:right-[-125px] bg-white px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-100 max-w-[130px] sm:max-w-[175px] xl:max-w-[190px] z-40 pointer-events-auto block"
           >
             <div className="absolute -left-2 top-4 w-4 h-4 bg-white border-l-2 border-b-2 border-slate-100 transform rotate-45"></div>
             <p className="text-[9px] sm:text-[11px] font-black text-[#111827] uppercase tracking-tight leading-snug text-center">
@@ -122,7 +122,7 @@ export const Hero: React.FC<HeroProps> = ({
             exit="hidden"
             viewport={{ once: false, amount: 0.1 }}
           >
-            {/* Título */}
+            {/* Título con margen equilibrado */}
             <div className="ml-16 sm:ml-24 lg:ml-12 xl:ml-16">
               <motion.div
                 variants={itemVariants}
@@ -178,7 +178,7 @@ export const Hero: React.FC<HeroProps> = ({
             </motion.div>
           </motion.div>
 
-          {/* COLUMNA 2 (CENTRO) */}
+          {/* COLUMNA 2 (CENTRO): PRECIO, BOTONES Y CONTADOR (Espacio libre a ambos lados) */}
           <motion.div
             className="lg:col-span-3 z-10 w-full flex flex-col pt-0 lg:-mt-2 gap-5 items-start lg:ml-2 xl:ml-6"
             variants={containerVariants}
@@ -248,7 +248,7 @@ export const Hero: React.FC<HeroProps> = ({
             </motion.div>
           </motion.div>
 
-          {/* COLUMNA 3 (DERECHA) */}
+          {/* COLUMNA 3 (DERECHA): FOTO LIBERADA */}
           <motion.div
             className="lg:col-span-4 relative flex justify-end items-start pt-8 lg:-mt-12 xl:-mt-20"
             variants={rightColumnVariants}
