@@ -112,29 +112,30 @@ export const RecentSalesToast: React.FC = () => {
       className={`fixed bottom-6 left-6 z-40 transition-all duration-700 transform ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-6 opacity-0 scale-95 pointer-events-none'
         }`}
     >
-      <div className="bg-slate-900/95 text-white p-4.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-4 max-w-sm backdrop-blur-md">
+      {/* Se ajusta el max-w-[280px] y los espaciados (gap-3, p-4) para que la tarjeta sea más compacta a lo ancho y use el espacio vertical */}
+      <div className="bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-3 max-w-[280px] backdrop-blur-md">
         <div className="w-12 h-12 rounded-xl bg-[#C6F235] text-[#111827] flex items-center justify-center shrink-0 shadow-md">
           <Sparkles className="w-6 h-6 animate-pulse" />
         </div>
 
-        <div className="flex-1 pr-2">
+        <div className="flex-1 pr-1 min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-[#C6F235]">
-              ¡NUEVA COMPRA VERIFICADA!
+              ¡NUEVA COMPRA!
             </span>
             <span className="text-[10px] text-slate-400 font-semibold">{currentSale.time}</span>
           </div>
-          <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+          <p className="text-xs sm:text-sm font-bold text-white mt-0.5 leading-tight">
             {currentSale.name} ({currentSale.city})
           </p>
-          <p className="text-xs text-slate-300 font-medium">
+          <p className="text-xs text-slate-300 font-medium mt-0.5">
             Adquirió <span className="text-[#FF2D78] font-bold">{currentSale.pack}</span>
           </p>
         </div>
 
         <button
           onClick={() => setIsDismissed(true)}
-          className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+          className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer shrink-0"
           aria-label="Cerrar notificación"
         >
           <X className="w-4 h-4" />

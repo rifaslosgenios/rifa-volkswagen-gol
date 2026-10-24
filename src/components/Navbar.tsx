@@ -21,13 +21,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Logo Branding */}
         <a href="#" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-2xl bg-[#FF2D78] flex items-center justify-center text-white text-xl shadow-glow-button group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-2xl bg-[#E60012] flex items-center justify-center text-white text-xl shadow-glow-button group-hover:scale-105 transition-transform">
             <Sparkles className="w-5 h-5 fill-white text-white" />
           </div>
           <div>
             <span className="font-heading font-black text-xl tracking-tight text-[#111827] flex items-center">
               RIFA LOS GENIOS{' '}
-              <span className="text-[#FF2D78] text-xs ml-1 font-semibold px-2 py-0.5 bg-[#FFF0F5] rounded-full">
+              <span className="text-[#E60012] text-xs ml-1 font-semibold px-2 py-0.5 bg-red-50 rounded-full">
                 RIFA
               </span>
             </span>
@@ -39,22 +39,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Desktop Navigation Menu */}
         <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold tracking-wide text-slate-600">
-          <a href="#premio" className="hover:text-[#FF2D78] transition-colors">
+          <a href="#premio" className="hover:text-[#E60012] transition-colors">
             EL PREMIO
           </a>
-          <a href="#comprar" className="hover:text-[#FF2D78] transition-colors">
+          <a href="#comprar" className="hover:text-[#E60012] transition-colors">
             COMPRAR BOLETOS
           </a>
-          <a href="#ventajas" className="hover:text-[#FF2D78] transition-colors">
+          <a href="#ventajas" className="hover:text-[#E60012] transition-colors">
             BENEFICIOS
           </a>
           <button
             onClick={onOpenLegalModal}
-            className="hover:text-[#FF2D78] transition-colors cursor-pointer text-left"
+            className="hover:text-[#E60012] transition-colors cursor-pointer text-left"
           >
             BASES LEGALES
           </button>
-          <a href="#faq" className="hover:text-[#FF2D78] transition-colors">
+          <a href="#faq" className="hover:text-[#E60012] transition-colors">
             PREGUNTAS
           </a>
         </nav>
@@ -67,9 +67,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-[#111827] text-xs sm:text-sm font-bold uppercase tracking-wider px-3.5 py-2.5 rounded-full border border-slate-300 transition-all cursor-pointer"
               title="Ver mis boletos comprados"
             >
-              <Ticket className="w-4 h-4 text-[#FF2D78]" />
+              <Ticket className="w-4 h-4 text-[#E60012]" />
               <span className="hidden sm:inline">Mis Boletos</span>
-              <span className="bg-[#FF2D78] text-white text-[11px] px-1.5 py-0.2 rounded-full font-bold">
+              <span className="bg-[#E60012] text-white text-[11px] px-1.5 py-0.2 rounded-full font-bold">
                 {ticketsCount}
               </span>
             </button>
@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={onOpenPurchaseModal}
-            className="inline-flex items-center gap-2 bg-[#FF2D78] hover:bg-[#E01A63] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-3 rounded-full shadow-glow-button hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#E60012] hover:bg-[#B3000E] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-3 rounded-full shadow-glow-button hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
           >
             <span>PARTICIPAR AHORA</span>
             <PlusCircle className="w-4 h-4" />
@@ -86,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile hamburger button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-slate-600 hover:text-[#FF2D78] focus:outline-none"
+            className="lg:hidden p-2 text-slate-600 hover:text-[#E60012] focus:outline-none"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -101,21 +101,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             <a
               href="#premio"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1 hover:text-[#FF2D78]"
+              className="py-1 hover:text-[#E60012]"
             >
               EL PREMIO
             </a>
             <a
               href="#comprar"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1 hover:text-[#FF2D78]"
+              className="py-1 hover:text-[#E60012]"
             >
               COMPRAR BOLETOS
             </a>
             <a
               href="#ventajas"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1 hover:text-[#FF2D78]"
+              className="py-1 hover:text-[#E60012]"
             >
               BENEFICIOS
             </a>
@@ -124,14 +124,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setMobileMenuOpen(false);
                 onOpenLegalModal();
               }}
-              className="py-1 text-left hover:text-[#FF2D78]"
+              className="py-1 text-left hover:text-[#E60012]"
             >
               BASES LEGALES
             </button>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1 hover:text-[#FF2D78]"
+              className="py-1 hover:text-[#E60012]"
             >
               PREGUNTAS
             </a>
@@ -145,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 rounded-full font-bold text-xs uppercase text-slate-800"
               >
-                <Ticket className="w-4 h-4 text-[#FF2D78]" />
+                <Ticket className="w-4 h-4 text-[#E60012]" />
                 Mis Boletos ({ticketsCount})
               </button>
             )}
@@ -154,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setMobileMenuOpen(false);
                 onOpenPurchaseModal();
               }}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-[#FF2D78] text-white rounded-full font-bold text-xs uppercase shadow-glow-button"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#E60012] text-white rounded-full font-bold text-xs uppercase shadow-glow-button hover:bg-[#B3000E]"
             >
               <PlusCircle className="w-4 h-4" />
               Comprar Boletos

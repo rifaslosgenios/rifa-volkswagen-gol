@@ -7,7 +7,7 @@ export const Testimonials: React.FC = () => {
     <section className="py-20 bg-white" data-purpose="participants-testimonials">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto mb-16">
-          <span className="text-xs font-black tracking-widest uppercase text-[#FF2D78]">
+          <span className="text-xs font-black tracking-widest uppercase text-[#E60012]">
             CONFIANZA Y TRANSPARENCIA
           </span>
           <h2 className="font-heading font-black text-3xl sm:text-4xl text-[#111827] mt-2 tracking-tight">
