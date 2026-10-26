@@ -30,30 +30,27 @@ import fuelImg from '../assets/galeria/gol M (1).jpeg';
 
 export const NOTARY_INFO = {
   number: 1,
-  notaryName: 'Sorteo Oficial de Lotería Nacional',
+  notaryName: 'Sorteo Oficial Lotería de la Cruz Roja',
   college: 'Ministerio de Transporte - República de Colombia',
   protocol: 'Protocolo Legal / Traspaso Directo al Ganador',
   address: 'Organismo de Tránsito Municipal de Funza, Cundinamarca',
   date: '2027-01-06',
   license: 'Sorteo Oficial Día de Reyes 2027',
   securityHash: '8f7a29bc41d08e5473e659b8a09f3e12c478d10b78c93a02f65a19820bc6a47e',
-  bomboType: 'Sorteo Oficial Lotería Nacional de Colombia',
+  bomboType: 'Sorteo Oficial Lotería de la Cruz Roja',
   totalNumbers: 10000,
-  soldNumbers: 6840,
-  initialPercentage: 68.4,
+  soldNumbers: 2500,
+  initialPercentage: 25.0,
 };
 
-// Beneficios que son iguales en los tres paquetes (todos son ciertos para todos).
-// El beneficio "Si ganas…" se muestra aparte, destacado, en TicketSelector.tsx
 const PACKAGE_FEATURES = [
   'Elige tus números o déjalos al azar',
-  'Recibe tus números al instante por WhatsApp y correo',
-  'Certificado digital de tu participación',
-  'Transmisión en directo del sorteo',
-  'Soporte por WhatsApp',
+  'Descarga e imprime tu comprobante oficial en PDF',
+  'Consulta tus números en el buscador público',
+  'Transmisión en directo con Lotería de la Cruz Roja',
+  'Soporte directo por WhatsApp',
 ];
 
-// Sin promociones: cada número cuesta $5.000 en los tres paquetes
 export const TICKET_PACKAGES: TicketPackage[] = [
   {
     id: 'single',
@@ -103,11 +100,11 @@ export const TICKET_PACKAGES: TicketPackage[] = [
 export const VEHICLE_SPECS: VehicleSpec[] = [
   {
     id: 'motor',
-    title: 'Mecánica y Motor Renovados',
+    title: 'MANTENIMIENTOS AL DÍA',
     subtitle: 'Volkswagen Gol Mi 1.6L (Modelo 1998)',
     image: motorImg,
-    shortDesc: 'Motor de 1.600 cc completamente optimizado con repuestos nuevos para máxima confiabilidad.',
-    fullDesc: 'Este clásico Volkswagen Gol 98 (Placa CIY069, Color Negro Universal, Carrocería Coupé) ha recibido una renovación mecánica profunda para garantizar un rendimiento impecable en carretera colombiana.',
+    shortDesc: 'Componentes mecánicos revisados y mantenimientos ejecutados para el correcto funcionamiento.',
+    fullDesc: 'Este clásico Volkswagen Gol 98 (Placa CIY069, Color Negro Universal, Carrocería Coupé) cuenta con sus mantenimientos al día para su correcto funcionamiento.',
     features: [
       'Correa de repartición nueva',
       'Aceite y filtros nuevos',
@@ -149,7 +146,7 @@ export const VEHICLE_SPECS: VehicleSpec[] = [
     subtitle: 'Tránsito de Funza - 100% Legal',
     image: papersImg,
     shortDesc: 'Documentación al día y traspaso legal cubierto directamente a nombre del ganador.',
-    fullDesc: 'Cero complicaciones administrativas. El carro se entrega con SOAT, revisión tecnomecánica vigentes, impuestos al día y el traspaso inscrito directamente en el Organismo de Tránsito de Funza con todos los gastos cubiertos.',
+    fullDesc: 'Cero complicaciones administrativas. El carro se entrega con SOAT, revisión tecnomecánica vigentes, impuestos al día y el traspaso inscrito directamente en el Organismo de Tránsito de Funza con todos los gastos de radicación cubiertos.',
     features: [
       'Traspaso legal a nombre del ganador cubierto al 100%',
       'Matriculado en el Tránsito de Funza, Cundinamarca',
@@ -168,15 +165,13 @@ export const VEHICLE_SPECS: VehicleSpec[] = [
     subtitle: '¡Listo para Rodar de Inmediato!',
     image: fuelImg,
     shortDesc: 'Te entregamos el carro con el tanque completamente lleno de gasolina.',
-    fullDesc: 'Queremos que desde el primer segundo en que recibas tu Volkswagen Gol 98 disfrutes la experiencia al máximo sin preocuparte por tanquear. ¡Llave en mano y tanque lleno!',
+    fullDesc: 'Queremos que desde el primer segundo en que recibas tu Volkswagen Gol 98 disfrutes la experiencia al máximo sin preocuparte por tanquear.',
     features: [
       'Tanque de combustible 100% lleno',
-      'Kit de carretera reglamentario incluido',
-      'Lavado general y detailing previo a entrega',
     ],
     technicalData: {
       'Obsequio': 'Tanque lleno de combustible',
-      'Entrega': 'Llave en mano en Bogotá',
+      'Entrega': 'Presencial en Bogotá D.C.',
     },
   },
 ];
@@ -188,7 +183,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     location: 'Medellín',
     role: 'Participante',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200',
-    quote: 'Pagué por Nequi y me llegaron los números de una al WhatsApp. Todo muy rápido. Con toda la fe para ese Golcito 🙏',
+    quote: 'Pagué por Nequi y descargué mi comprobante en PDF de una vez. Todo muy claro y rápido. Con la fe intacta para ese Golcito 🙏',
     rating: 5,
     accentColor: '#E60012',
   },
@@ -198,7 +193,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     location: 'Bogotá',
     role: 'Participante',
     avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=200',
-    quote: 'Súper breve todo. Mandé el comprobante y en menos de nada ya me confirmaron. ¡Recomendados!',
+    quote: 'Súper breve el proceso. Subí el comprobante y pude revisar mis números en la sección de Mis Boletos de inmediato.',
     rating: 5,
     accentColor: '#C6F235',
   },
@@ -208,7 +203,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     location: 'Cali',
     role: 'Participante',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    quote: 'A 5 mil pesitos aguanta mucho probar suerte. Transparente y te llega al correo de una vez. 🤞',
+    quote: 'A 5 mil pesitos vale la pena probar suerte. Muy claro todo lo del Tránsito de Funza y los términos legales.',
     rating: 5,
     accentColor: '#E60012',
   },
@@ -218,7 +213,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     location: 'Barranquilla',
     role: 'Participante',
     avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200',
-    quote: 'Yo ya aseguré mis 10 numeritos. La plataforma funciona melo y responden súper rápido por el chat.',
+    quote: 'Aseguré mis 10 numeritos. La plataforma es muy fácil de usar y todo queda guardado transparente.',
     rating: 5,
     accentColor: '#C6F235',
   },
@@ -228,7 +223,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     location: 'Bucaramanga',
     role: 'Participante',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
-    quote: 'Me dio confianza ver que están legales en tránsito. Compré 5 números y cero enredos, todo clarísimo.',
+    quote: 'Da mucha tranquilidad saber que se entrega con el traspaso radicado y sin enredos. Compré 5 números.',
     rating: 5,
     accentColor: '#E60012',
   },
@@ -238,7 +233,7 @@ export const TESTIMONIALS: TestimonialItem[] = [
     location: 'Pereira',
     role: 'Participante',
     avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=200',
-    quote: 'Muy firme el pago con Daviplata. Ojalá me lo gane, se ve muy bien cuidado ese carro 🔥',
+    quote: 'Muy fácil pagar por Daviplata. Ojalá me lo gane, está muy bacano el carro 🔥',
     rating: 5,
     accentColor: '#C6F235',
   },
@@ -247,40 +242,45 @@ export const TESTIMONIALS: TestimonialItem[] = [
 export const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'faq1',
-    question: '¿Cómo y cuándo recibiré mis números de participación?',
-    answer: 'De forma inmediata tras completar tu pago y validar el comprobante. Recibirás un correo electrónico y un mensaje de WhatsApp con tu comprobante de participación, que incluye tus números elegidos. Además, tus boletos quedan guardados en la sección "Mis Boletos" de esta misma página.',
+    question: '¿Cómo y cuándo se realiza el sorteo?',
+    answer: 'El sorteo consta de 10.000 números (del 0000 al 9999) y jugará con el Premio Mayor de la Lotería de la Cruz Roja el día 6 de enero de 2027. El ganador será quien coincida con las 4 cifras en estricto orden.',
   },
   {
     id: 'faq2',
-    question: '¿Qué ocurre si no se vende la totalidad de los números?',
-    answer: 'El sorteo se realiza de forma segura e ineludible en la fecha estipulada (6 de enero de 2027) tomando como referencia el premio mayor de la Lotería Nacional oficial de Colombia. ¡Siempre hay un ganador garantizado entre los boletos vendidos!',
+    question: '¿Qué ocurre si no se alcanzan a vender los boletos?',
+    answer: 'Tenemos fijada una meta del 70% de la boletería vendida (punto de equilibrio). Si no se alcanza esa meta para el 6 de enero de 2027, el sorteo se aplazará a la siguiente fecha oficial de la Lotería de la Cruz Roja hasta cumplir el porcentaje, manteniendo total validez tus boletos adquiridos.',
   },
   {
     id: 'faq3',
-    question: '¿Puedo participar si resido en cualquier ciudad de Colombia?',
-    answer: '¡Por supuesto! Pueden participar mayores de 18 años desde cualquier departamento o municipio de Colombia. Si ganas, coordinamos contigo la entrega del vehículo en Bogotá.',
+    question: '¿Dónde y cómo se realiza la entrega del vehículo?',
+    answer: 'La entrega física del vehículo se realiza únicamente en Bogotá D.C. Por seguridad jurídica de ambas partes, las llaves y el carro se entregan en el momento exacto en que el traspaso cerrado quede formalmente radicado ante el Tránsito de Funza.',
   },
   {
     id: 'faq4',
-    question: '¿Tengo que pagar impuestos adicionales o gastos de traspaso?',
-    answer: 'No. El carro se entrega completamente matriculado a tu nombre en el Tránsito de Funza, con impuestos al día, SOAT y revisión tecnomecánica vigentes, además del tanque lleno de gasolina de cortesía. ¡Cero gastos ocultos para ti!',
+    question: '¿Quién asume los gastos de traspaso e impuestos?',
+    answer: 'El organizador asume el 100% de los costos de radicación de traspaso ante el Tránsito de Funza y gastos notariales. El vehículo se entrega a paz y salvo de multas e impuestos hasta la fecha del traspaso. Impuestos futuros o declaración de renta son asumidos por el ganador.',
   },
   {
     id: 'faq5',
-    question: '¿Cómo se elige el número ganador?',
-    answer: 'El ganador se determina de manera transparente y oficial mediante los resultados del sorteo de Lotería Nacional en la fecha programada. Podrás seguir la transmisión en directo a través de nuestros canales oficiales.',
+    question: '¿El carro cuenta con garantía mecánica?',
+    answer: 'Al ser un vehículo usado entregado mediante sorteo (por un valor simbólico), se entrega en la condición física y mecánica en que se encuentra actualmente ("As is"). El ganador asume las revisiones preventivas que desee realizarle posterior a la entrega.',
+  },
+  {
+    id: 'faq6',
+    question: '¿Cómo consulto mis números guardados?',
+    answer: 'Puedes ingresar a la sección "Mis Boletos" en la barra superior de la página y buscar con tu número de orden o teléfono para ver tus números asignados y descargar tu comprobante PDF cuando quieras.',
+  },
+  {
+    id: 'faq7',
+    question: '¿Puedo pedir reembolso de mis boletos?',
+    answer: 'No. Las compras de boletos son definitivas e irreversibles debido a la reserva inmediata de los números en el sistema.',
   },
 ];
 
 export const RECENT_SALES = [
-  { name: 'Carlos Martínez', city: 'Medellín', pack: 'Cinco números', time: 'hace 1 min' },
-  { name: 'Lucía Vásquez', city: 'Bogotá', pack: 'Diez números', time: 'hace 3 min' },
-  { name: 'Andrés Parra', city: 'Cali', pack: 'Cinco números', time: 'hace 5 min' },
-  { name: 'Marta Giraldo', city: 'Barranquilla', pack: 'Un número', time: 'hace 8 min' },
-  { name: 'Javier Suárez', city: 'Bucaramanga', pack: 'Cinco números', time: 'hace 11 min' },
-  { name: 'Nerea Cárdenas', city: 'Pereira', pack: 'Diez números', time: 'hace 14 min' },
-  { name: 'Esteban Restrepo', city: 'Manizales', pack: 'Cinco números', time: 'hace 17 min' },
-  { name: 'Valeria Morales', city: 'Cartagena', pack: 'Un número', time: 'hace 21 min' },
-  { name: 'Santiago Rincón', city: 'Ibagué', pack: 'Diez números', time: 'hace 25 min' },
-  { name: 'Camila Torres', city: 'Villavicencio', pack: 'Cinco números', time: 'hace 30 min' },
+  { name: 'Carlos M.', city: 'Medellín', pack: 'Cinco números', time: 'hace un momento' },
+  { name: 'Lucía V.', city: 'Bogotá', pack: 'Diez números', time: 'hace 3 min' },
+  { name: 'Andrés P.', city: 'Cali', pack: 'Cinco números', time: 'hace 5 min' },
+  { name: 'Marta G.', city: 'Barranquilla', pack: 'Un número', time: 'hace 8 min' },
+  { name: 'Javier S.', city: 'Bucaramanga', pack: 'Cinco números', time: 'hace 11 min' },
 ];
