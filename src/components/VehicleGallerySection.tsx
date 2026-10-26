@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VEHICLE_GALLERY_PHOTOS } from '../data/mockData';
 import { Eye, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
@@ -51,6 +51,34 @@ export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ on
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedIndex]);
+
+    // BOTÓN "ATRÁS": con la foto ampliada abierta, "Atrás" la cierra y deja a la persona
+    // en la galería, en vez de sacarla de la página.
+    const isLightboxOpen = selectedIndex !== null;
+    const lightboxEntryRef = useRef(false);
+
+    useEffect(() => {
+        if (isLightboxOpen && !lightboxEntryRef.current) {
+            window.history.pushState({ lightboxOpen: true }, '');
+            lightboxEntryRef.current = true;
+        } else if (!isLightboxOpen && lightboxEntryRef.current) {
+            lightboxEntryRef.current = false;
+            if (window.history.state && window.history.state.lightboxOpen) {
+                window.history.back();
+            }
+        }
+    }, [isLightboxOpen]);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            if (lightboxEntryRef.current) {
+                lightboxEntryRef.current = false;
+                setSelectedIndex(null);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
     const getCardStyles = (index: number) => {
         const diff = (index - currentIndex + length) % length;

@@ -32,6 +32,31 @@ export interface PurchasedTicket {
   paymentMethod: string;
 }
 
+// --- NUEVOS TIPOS PARA FIREBASE (ETAPA A) ---
+
+// Representa un número individual en la base de datos (Dato público)
+export interface TicketData {
+  status: 'reserved' | 'paid';
+  orderId: string;
+  expiresAt: number; // Tiempo límite (timestamp) antes de que el número vuelva a quedar libre
+}
+
+// Representa la orden de compra con información sensible (Dato privado)
+export interface OrderData {
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  buyerDni?: string;
+  packageName: string;
+  totalPrice: number;
+  numbers: string[];
+  status: 'pending' | 'paid';
+  receiptImageBase64?: string; // Aquí guardaremos la foto comprimida (máx 150kb)
+  createdAt: number;
+}
+
+// --------------------------------------------
+
 export interface VehicleSpec {
   id: string;
   title: string;

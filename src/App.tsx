@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { collection, getCountFromServer, query, where } from 'firebase/firestore';
+import { db } from './firebaseConfig';
+
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -22,11 +25,12 @@ import { VehicleDetailModal } from './components/VehicleDetailModal';
 import { LegalBasesModal } from './components/LegalBasesModal';
 import { RecentSalesToast } from './components/RecentSalesToast';
 import { CookieConsent } from './components/CookieConsent';
-import { NOTARY_INFO, TICKET_PACKAGES } from './data/mockData';
+import { TICKET_PACKAGES } from './data/mockData';
 import { PurchasedTicket, TicketPackage, VehicleSpec } from './types';
 
+const TOTAL_TICKETS_AVAILABLE = 10000;
+
 export default function App() {
-  // Stored Tickets State
   const [purchasedTickets, setPurchasedTickets] = useState<PurchasedTicket[]>(() => {
     try {
       const saved = localStorage.getItem('chic_glam_tickets');
@@ -36,21 +40,89 @@ export default function App() {
     }
   });
 
-  // Modal Visibility States
+  const [realSoldTotal, setRealSoldTotal] = useState(0);
+  const [soldPercentage, setSoldPercentage] = useState("0.0");
+
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<TicketPackage | null>(null);
-
   const [isMyTicketsModalOpen, setIsMyTicketsModalOpen] = useState(false);
   const [isNotaryModalOpen, setIsNotaryModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
-
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVehicleSpec, setSelectedVehicleSpec] = useState<VehicleSpec | null>(null);
 
-  // En computador el carrusel del moño va dentro del Hero; en celular va después de la galería oscura
   const isDesktop = useIsDesktop();
+  const modalEntryRef = useRef(false);
 
-  // Sync to localStorage
+  const anyModalOpen =
+    isPurchaseModalOpen ||
+    isMyTicketsModalOpen ||
+    isNotaryModalOpen ||
+    isLegalModalOpen ||
+    isVehicleModalOpen;
+
+  // Consultar conteo real en Firebase y aplicar simulación de marketing
+  useEffect(() => {
+    const fetchRealSalesCount = async () => {
+      try {
+        // 1. Consultar el número real en la base de datos
+        const coll = collection(db, 'tickets');
+        const q = query(coll, where('status', 'in', ['paid', 'reserved']));
+        const snapshot = await getCountFromServer(q);
+        const realCount = snapshot.data().count;
+
+        // 2. Crear la simulación (La "Fachada")
+        const startDate = new Date('2026-10-25').getTime();
+        const now = Date.now();
+        const daysPassed = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
+
+        const baseFakeCount = 2500; // Arranca en 25% (2500 boletos)
+        const dailyFakeSales = 15;  // Suma 15 boletos cada día
+
+        // Calcula cuántos boletos simulados van hasta hoy
+        const simulatedCount = Math.floor(baseFakeCount + (daysPassed * dailyFakeSales));
+
+        // 3. El equilibrio: Mostrar siempre el número mayor
+        const displayCount = Math.max(simulatedCount, realCount);
+
+        // 4. Enviar a la barra superior y al contador
+        setRealSoldTotal(displayCount);
+        setSoldPercentage(((displayCount / TOTAL_TICKETS_AVAILABLE) * 100).toFixed(1));
+
+      } catch (error) {
+        console.log("Esperando conexión o datos en Firebase...");
+      }
+    };
+    fetchRealSalesCount();
+  }, []);
+
+  useEffect(() => {
+    if (anyModalOpen && !modalEntryRef.current) {
+      window.history.pushState({ modalOpen: true }, '');
+      modalEntryRef.current = true;
+    } else if (!anyModalOpen && modalEntryRef.current) {
+      modalEntryRef.current = false;
+      if (window.history.state && window.history.state.modalOpen) {
+        window.history.back();
+      }
+    }
+  }, [anyModalOpen]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (modalEntryRef.current) {
+        modalEntryRef.current = false;
+        setIsPurchaseModalOpen(false);
+        setIsMyTicketsModalOpen(false);
+        setIsNotaryModalOpen(false);
+        setIsLegalModalOpen(false);
+        setIsVehicleModalOpen(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem('chic_glam_tickets', JSON.stringify(purchasedTickets));
@@ -59,15 +131,8 @@ export default function App() {
     }
   }, [purchasedTickets]);
 
-  // Calculate live sold tickets count
-  const extraTicketsSold = purchasedTickets.reduce(
-    (sum, t) => sum + (t.numbers ? t.numbers.length : 1),
-    0
-  );
-  const currentSoldTotal = NOTARY_INFO.soldNumbers + extraTicketsSold;
-
   const handleOpenPurchase = (pkg?: TicketPackage) => {
-    setSelectedPackage(pkg || TICKET_PACKAGES[1]); // Default to Pack Super Star
+    setSelectedPackage(pkg || TICKET_PACKAGES[1]);
     setIsPurchaseModalOpen(true);
   };
 
@@ -78,15 +143,18 @@ export default function App() {
 
   const handlePurchaseComplete = (ticket: PurchasedTicket) => {
     setPurchasedTickets((prev) => [ticket, ...prev]);
+    // Actualizamos el contador localmente de forma temporal hasta que refresquen la página
+    setRealSoldTotal(prev => Math.max(prev + ticket.numbers.length, prev));
   };
 
   return (
     <div className="min-h-screen bg-[#FCFCFD] text-slate-800 font-sans antialiased selection:bg-[#E60012] selection:text-white flex flex-col justify-between">
       <div>
-        {/* Top Announcement Bar */}
-        <TopBar onOpenNotaryModal={() => setIsNotaryModalOpen(true)} />
+        <TopBar
+          onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
+          soldPercentage={soldPercentage}
+        />
 
-        {/* Main Sticky Navbar */}
         <Navbar
           onOpenPurchaseModal={() => handleOpenPurchase()}
           onOpenMyTicketsModal={() => setIsMyTicketsModalOpen(true)}
@@ -95,7 +163,6 @@ export default function App() {
         />
 
         <main>
-          {/* Hero Section */}
           <Hero
             onOpenPurchaseModal={() => handleOpenPurchase()}
             onOpenVehicleModal={() => {
@@ -105,10 +172,8 @@ export default function App() {
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
-          {/* Full Vehicle Gallery Section (40 Real Photos with Models) */}
           <VehicleGallerySection onOpenPurchaseModal={() => handleOpenPurchase()} />
 
-          {/* Carrusel de fotos con moño: SOLO celular, justo después de la galería oscura */}
           {!isDesktop && (
             <section className="relative bg-white py-12 overflow-hidden">
               <div className="max-w-[95rem] mx-auto px-4 sm:px-6">
@@ -117,33 +182,28 @@ export default function App() {
             </section>
           )}
 
-          {/* Vehicle Highlights & Specs (4 Cards) */}
           <VehicleSpecs onSelectSpec={handleOpenSpecDetail} />
-
-          {/* Past Winners Testimonials */}
           <Testimonials />
 
-          {/* Ticket Selection Module (3 Tiers) */}
           <TicketSelector
             onSelectPackage={(pkg) => handleOpenPurchase(pkg)}
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
-          {/* Live Countdown & Numbers Progress Bar */}
-          <CountdownSection soldTicketsCount={currentSoldTotal} />
+          <CountdownSection
+            soldTicketsCount={realSoldTotal}
+            totalTicketsCount={TOTAL_TICKETS_AVAILABLE}
+          />
 
-          {/* FAQ Accordion */}
           <FaqSection />
         </main>
       </div>
 
-      {/* Main Pink Footer */}
       <Footer
         onOpenLegalModal={() => setIsLegalModalOpen(true)}
         onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
       />
 
-      {/* MODALS */}
       {isPurchaseModalOpen && (
         <PurchaseModal
           initialPackage={selectedPackage}
@@ -179,10 +239,7 @@ export default function App() {
         <LegalBasesModal onClose={() => setIsLegalModalOpen(false)} />
       )}
 
-      {/* Recent Purchases Real-Time Notification Toast */}
       <RecentSalesToast />
-
-      {/* Cookie Consent Banner */}
       <CookieConsent />
     </div>
   );
