@@ -10,11 +10,13 @@ import {
   Upload,
   ExternalLink,
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { TICKET_PACKAGES, NOTARY_INFO } from '../data/mockData';
 import { TicketPackage, PurchasedTicket } from '../types';
 
+// Importaciones oficiales de NPM (Corregidas para Vercel)
 import { db } from '../firebaseConfig';
-import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
 
 interface PurchaseModalProps {
   initialPackage?: TicketPackage | null;
@@ -22,16 +24,13 @@ interface PurchaseModalProps {
   onPurchaseComplete: (ticket: PurchasedTicket) => void;
 }
 
-// Precio de un boleto suelto (sirve para calcular cuántos boletos gratis trae cada paquete)
 const UNIT_PRICE = 5000;
 
-// Formatea 25000 -> $25.000
 const formatPrice = (value: number | string): string => {
   const n = Math.round(Number(value) || 0);
   return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
-// Título de cada paso: círculo con número + pregunta sencilla
 const StepTitle: React.FC<{ n: number; title: string; hint?: string }> = ({ n, title, hint }) => (
   <div className="flex items-start gap-3 mb-3">
     <span className="shrink-0 w-8 h-8 rounded-full bg-[#111827] text-white font-heading font-black text-base flex items-center justify-center">
@@ -47,6 +46,41 @@ const StepTitle: React.FC<{ n: number; title: string; hint?: string }> = ({ n, t
 const inputClass =
   'w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#FF2D78]';
 
+// Función para comprimir la imagen del comprobante antes de enviarla a Firebase (Ahorra espacio y costos)
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        } else if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        // Formato JPEG a 70% de calidad asegura pesos menores a 150KB
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   initialPackage,
   onClose,
@@ -59,17 +93,13 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const [manualNumbers, setManualNumbers] = useState<string[]>([]);
   const [currentManualInput, setCurrentManualInput] = useState('');
   const [manualInputError, setManualInputError] = useState('');
-
   const [previewRandomNumbers, setPreviewRandomNumbers] = useState<string[]>([]);
 
-  // Form Fields
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
   const [buyerDni, setBuyerDni] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'nequi' | 'daviplata' | 'mercadopago'>('mercadopago');
-
-  // Estado para la aceptación obligatoria de términos, condiciones y habeas data
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [paymentProof, setPaymentProof] = useState<string | null>(null);
@@ -82,9 +112,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const generateRandomNumbers = (count: number): string[] => {
     const numbers = new Set<string>();
     while (numbers.size < count) {
-      const num = Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, '0');
+      const num = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
       numbers.add(num);
     }
     return Array.from(numbers);
@@ -107,9 +135,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
       return;
     }
     if (manualNumbers.length >= selectedPackage.totalNumbers) {
-      setManualInputError(
-        `Tu paquete incluye ${selectedPackage.totalNumbers} números. Ya completaste la selección.`
-      );
+      setManualInputError(`Tu paquete incluye ${selectedPackage.totalNumbers} números. Ya completaste la selección.`);
       return;
     }
     setManualNumbers([...manualNumbers, formatted]);
@@ -120,15 +146,17 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     setManualNumbers(manualNumbers.filter((n) => n !== num));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setProofFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPaymentProof(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file);
+        setPaymentProof(compressedBase64);
+      } catch (error) {
+        console.error("Error comprimiendo imagen", error);
+        alert("Hubo un error procesando la imagen. Intenta con otra.");
+      }
     }
   };
 
@@ -139,12 +167,10 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
       alert('Por favor, completa los campos requeridos (Nombre, Teléfono y Email).');
       return;
     }
-
     if (!acceptTerms) {
       alert('Debes aceptar los Términos, Condiciones y la Política de Tratamiento de Datos (Habeas Data) para continuar.');
       return;
     }
-
     if ((paymentMethod === 'nequi' || paymentMethod === 'daviplata') && !paymentProof) {
       alert('Por favor, carga el comprobante de pago para continuar.');
       return;
@@ -164,42 +190,63 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     }
 
     setIsProcessing(true);
-    setProcessingStep('Registrando reserva en Firebase...');
+    setProcessingStep('Verificando disponibilidad de números...');
 
     try {
-      const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-
+      // 1. Verificar que ninguno de los números esté ocupado
+      const now = Date.now();
       for (const num of finalNumbers) {
         const ticketRef = doc(db, "tickets", num);
         const docSnap = await getDoc(ticketRef);
 
-        const ticketData = {
-          numero: num,
-          estado: paymentMethod === 'mercadopago' ? "pendiente_pago" : "pendiente_pago",
-          expiraEn: expiresAt,
-          comprador: {
-            nombre: buyerName,
-            telefono: buyerPhone,
-            email: buyerEmail,
-            documento: buyerDni || 'No proporcionado',
-            metodoPago: paymentMethod,
-            comprobanteUrl: paymentProof || null,
-            fecha: new Date().toISOString()
-          }
-        };
-
         if (docSnap.exists()) {
-          await updateDoc(ticketRef, ticketData);
-        } else {
-          await setDoc(ticketRef, ticketData);
+          const data = docSnap.data();
+          if (data.status === 'paid' || (data.status === 'reserved' && data.expiresAt > now)) {
+            alert(`Lo sentimos, el número #${num} acaba de ser reservado por alguien más. Por favor escoge otro o genera números al azar nuevos.`);
+            setIsProcessing(false);
+            return;
+          }
         }
       }
 
+      setProcessingStep('Registrando orden segura...');
+
+      // 2. Crear la Orden (Datos Privados)
+      const orderNum = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+      const orderRef = doc(collection(db, "orders"));
+
+      await setDoc(orderRef, {
+        orderNumber: orderNum,
+        buyerName,
+        buyerEmail,
+        buyerPhone,
+        buyerDni: buyerDni || 'No proporcionado',
+        packageName: selectedPackage.name,
+        totalPrice: selectedPackage.price,
+        numbers: finalNumbers,
+        status: 'pending',
+        paymentMethod,
+        receiptImageBase64: paymentProof || null,
+        createdAt: now
+      });
+
+      // 3. Bloquear los números (Datos Públicos) - Vencimiento 2h
+      const expiresAt = now + (2 * 60 * 60 * 1000);
+      for (const num of finalNumbers) {
+        const ticketRef = doc(db, "tickets", num);
+        await setDoc(ticketRef, {
+          status: 'reserved',
+          orderId: orderRef.id,
+          expiresAt: expiresAt
+        });
+      }
+
       setProcessingStep('Generando comprobante oficial...');
+
+      // 4. Crear el comprobante de éxito local
       setTimeout(() => {
-        const orderNum = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
         const ticket: PurchasedTicket = {
-          id: `TCK-${Date.now()}`,
+          id: orderRef.id,
           orderNumber: orderNum,
           packageName: selectedPackage.name,
           numbers: finalNumbers,
@@ -209,11 +256,8 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
           buyerPhone,
           buyerDni: buyerDni || 'No proporcionado',
           purchaseDate: new Date().toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+            day: '2-digit', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
           }),
           notaryProtocol: `${NOTARY_INFO.protocol} / Acta #${Math.floor(1000 + Math.random() * 9000)}`,
           qrData: `NOTARY42:${orderNum}:${finalNumbers.join(',')}`,
@@ -227,12 +271,85 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
     } catch (error) {
       console.error("Error al registrar en Firebase:", error);
-      alert("Hubo un error al guardar los boletos en la base de datos.");
+      alert("Hubo un error de conexión al guardar tu reserva. Por favor intenta de nuevo.");
       setIsProcessing(false);
     }
   };
 
-  // La ventana es ancha solo mientras se llena el formulario
+  // Generador Real de PDF usando jsPDF
+  const handleDownloadPDF = () => {
+    if (!completedTicket) return;
+
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFillColor(17, 24, 39); // bg-slate-900
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("RIFA LOS GENIOS", 105, 18, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("COMPROBANTE OFICIAL DE RESERVA", 105, 26, { align: "center" });
+
+    // Body
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`¡Hola, ${completedTicket.buyerName}!`, 20, 55);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    const msg = completedTicket.paymentMethod.includes('Mercado')
+      ? 'Aquí tienes el resumen de tu reserva (Pendiente de pago exitoso):'
+      : 'Tus números están reservados por 2 horas mientras validamos tu transferencia:';
+    doc.text(msg, 20, 65);
+
+    // Box details
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, 75, 170, 50, 'F');
+
+    doc.setFont("helvetica", "bold");
+    doc.text("No. Orden:", 25, 85);
+    doc.setFont("helvetica", "normal");
+    doc.text(completedTicket.orderNumber, 60, 85);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Paquete:", 25, 95);
+    doc.setFont("helvetica", "normal");
+    doc.text(completedTicket.packageName, 60, 95);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Total:", 25, 105);
+    doc.setFont("helvetica", "normal");
+    doc.text(`$${completedTicket.totalPrice.toLocaleString('es-ES')}`, 60, 105);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Fecha:", 25, 115);
+    doc.setFont("helvetica", "normal");
+    doc.text(completedTicket.purchaseDate, 60, 115);
+
+    // Numbers
+    doc.setFont("helvetica", "bold");
+    doc.text("TUS NÚMEROS BLOQUEADOS:", 20, 140);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 45, 120); // Pink color
+    const numsText = completedTicket.numbers.map(n => `#${n}`).join('   ');
+    const splitNums = doc.splitTextToSize(numsText, 170);
+    doc.text(splitNums, 20, 150);
+
+    // Footer Legal
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Certificado de Garantía / Protocolo: ${completedTicket.notaryProtocol}`, 105, 270, { align: "center" });
+    doc.text("Válido como soporte de reserva en la plataforma oficial Rifa Volkswagen Gol 98", 105, 275, { align: "center" });
+
+    doc.save(`Reserva_Genios_${completedTicket.orderNumber}.pdf`);
+  };
+
   const isFormView = !completedTicket && !isProcessing;
 
   return (
@@ -338,11 +455,11 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
               <div className="flex flex-wrap gap-3 justify-center">
                 <button
-                  onClick={() => alert('Comprobante digital descargado.')}
+                  onClick={handleDownloadPDF}
                   className="inline-flex items-center gap-2 bg-[#111827] hover:bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
-                  Descargar Comprobante
+                  Descargar Comprobante PDF
                 </button>
                 <button
                   onClick={onClose}
@@ -373,7 +490,6 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handlePayment} className="flex flex-col flex-1 min-h-0">
-            {/* Zona con scroll: dos columnas en computador, una en celular */}
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
 
@@ -385,10 +501,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                     <div className="space-y-3">
                       {TICKET_PACKAGES.map((pkg) => {
                         const isSelected = selectedPackage.id === pkg.id;
-                        const freeTickets = Math.max(
-                          0,
-                          pkg.totalNumbers - Math.round(Number(pkg.price) / UNIT_PRICE)
-                        );
+                        const freeTickets = Math.max(0, pkg.totalNumbers - Math.round(Number(pkg.price) / UNIT_PRICE));
                         return (
                           <button
                             type="button"
@@ -688,7 +801,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                     )}
                   </div>
 
-                  {/* Términos y Habeas Data (obligatorio) */}
+                  {/* Términos y Habeas Data */}
                   <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                     <input
                       type="checkbox"
@@ -707,7 +820,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
               </div>
             </div>
 
-            {/* Barra fija abajo: siempre se ve el total y el botón */}
+            {/* Barra fija abajo */}
             <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between gap-3 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
               <div>
                 <span className="text-xs sm:text-sm text-slate-500 block leading-none">Total a pagar</span>
