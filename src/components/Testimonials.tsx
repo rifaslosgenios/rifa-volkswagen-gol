@@ -4,7 +4,8 @@ import { TESTIMONIALS } from '../data/mockData';
 
 export const Testimonials: React.FC = () => {
   return (
-    <section className="py-20 bg-white" data-purpose="participants-testimonials">
+    // Reduje pb-20 y lg:pb-24 a pb-4 y lg:pb-8 para quitar el espacio de abajo
+    <section className="pt-4 pb-4 lg:pt-8 lg:pb-8 bg-white" data-purpose="participants-testimonials">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto mb-16">
           <span className="text-xs font-black tracking-widest uppercase text-[#E60012]">
@@ -27,7 +28,6 @@ export const Testimonials: React.FC = () => {
                     <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                {/* Se aumentó el tamaño de texto de text-xs a text-sm sm:text-base para mayor legibilidad */}
                 <p className="text-sm sm:text-base text-slate-700 font-medium italic leading-relaxed mb-6">
                   {t.quote}
                 </p>

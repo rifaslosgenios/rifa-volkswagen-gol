@@ -7,11 +7,11 @@ import React, { useState, useEffect } from 'react';
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { HeroPhotoCarousel, useIsDesktop } from './components/HeroPhotoCarousel';
 import { CountdownSection } from './components/CountdownSection';
 import { VehicleSpecs } from './components/VehicleSpecs';
 import { VehicleGallerySection } from './components/VehicleGallerySection';
 import { TicketSelector } from './components/TicketSelector';
-import { NotaryGuarantees } from './components/NotaryGuarantees';
 import { Testimonials } from './components/Testimonials';
 import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
@@ -47,6 +47,9 @@ export default function App() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVehicleSpec, setSelectedVehicleSpec] = useState<VehicleSpec | null>(null);
 
+  // En computador el carrusel del moño va dentro del Hero; en celular va después de la galería oscura
+  const isDesktop = useIsDesktop();
+
   // Sync to localStorage
   useEffect(() => {
     try {
@@ -78,7 +81,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFCFD] text-slate-800 font-sans antialiased selection:bg-[#FF2D78] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#FCFCFD] text-slate-800 font-sans antialiased selection:bg-[#E60012] selection:text-white flex flex-col justify-between">
       <div>
         {/* Top Announcement Bar */}
         <TopBar onOpenNotaryModal={() => setIsNotaryModalOpen(true)} />
@@ -102,11 +105,20 @@ export default function App() {
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
+          {/* Full Vehicle Gallery Section (40 Real Photos with Models) */}
+          <VehicleGallerySection onOpenPurchaseModal={() => handleOpenPurchase()} />
+
+          {/* Carrusel de fotos con moño: SOLO celular, justo después de la galería oscura */}
+          {!isDesktop && (
+            <section className="relative bg-white py-12 overflow-hidden">
+              <div className="max-w-[95rem] mx-auto px-4 sm:px-6">
+                <HeroPhotoCarousel onOpenPurchaseModal={() => handleOpenPurchase()} />
+              </div>
+            </section>
+          )}
+
           {/* Vehicle Highlights & Specs (4 Cards) */}
           <VehicleSpecs onSelectSpec={handleOpenSpecDetail} />
-
-          {/* Full Vehicle Gallery Section (40 Real Photos with Models) */}
-          <VehicleGallerySection />
 
           {/* Past Winners Testimonials */}
           <Testimonials />
@@ -117,13 +129,7 @@ export default function App() {
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
-          {/* Notary Guarantees & Transparency */}
-          <NotaryGuarantees
-            onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
-            onOpenLegalModal={() => setIsLegalModalOpen(true)}
-          />
-
-          {/* Live Countdown & Numbers Progress Bar - MOVIDO JUSTO ANTES DE PREGUNTAS FRECUENTES */}
+          {/* Live Countdown & Numbers Progress Bar */}
           <CountdownSection soldTicketsCount={currentSoldTotal} />
 
           {/* FAQ Accordion */}

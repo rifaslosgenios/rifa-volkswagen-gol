@@ -7,7 +7,6 @@ interface CountdownSectionProps {
   totalTicketsCount?: number;
 }
 
-// Variantes de animación para las columnas
 const leftColumnVariant = {
   hidden: { opacity: 0, x: -60 },
   show: { opacity: 1, x: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } }
@@ -22,15 +21,11 @@ export const CountdownSection: React.FC<CountdownSectionProps> = ({
   soldTicketsCount,
   totalTicketsCount = 10000,
 }) => {
-  // Función para calcular meses exactos, horas, minutos y segundos hasta el 6 de enero de 2027
   const calculateTimeLeft = () => {
     const targetDate = new Date('2027-01-06T00:00:00');
     const now = new Date();
-
-    // Cálculo aproximado de meses y resto de tiempo
     let months = (targetDate.getFullYear() - now.getFullYear()) * 12 + (targetDate.getMonth() - now.getMonth());
 
-    // Ajustar si la fecha del mes actual aún no ha alcanzado el día 6
     const tempDate = new Date(now);
     tempDate.setMonth(tempDate.getMonth() + months);
     if (tempDate > targetDate && months > 0) {
@@ -57,18 +52,15 @@ export const CountdownSection: React.FC<CountdownSectionProps> = ({
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
   const percentage = ((soldTicketsCount / totalTicketsCount) * 100).toFixed(1);
 
   return (
-    <section className="py-10 bg-slate-50 border-y border-slate-200 overflow-hidden" data-purpose="countdown-and-progress">
+    <section className="py-4 bg-slate-50 border-y border-slate-200 overflow-hidden" data-purpose="countdown-and-progress">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-glow-soft border border-slate-100 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center overflow-hidden">
-
-          {/* Timer Display - Entra desde la izquierda */}
           <motion.div
             className="lg:col-span-5 flex flex-col items-center lg:items-start"
             variants={leftColumnVariant}
@@ -111,7 +103,6 @@ export const CountdownSection: React.FC<CountdownSectionProps> = ({
             </div>
           </motion.div>
 
-          {/* Progress Bar - Entra desde la derecha */}
           <motion.div
             className="lg:col-span-7"
             variants={rightColumnVariant}
@@ -142,7 +133,6 @@ export const CountdownSection: React.FC<CountdownSectionProps> = ({
               <span>La rifa se celebrará en la fecha indicada independientemente del 100% vendido.</span>
             </p>
           </motion.div>
-
         </div>
       </div>
     </section>

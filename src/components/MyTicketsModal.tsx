@@ -8,6 +8,12 @@ interface MyTicketsModalProps {
   onOpenPurchaseModal: () => void;
 }
 
+// Formatea 25000 -> $25.000
+const formatPrice = (value: number | string): string => {
+  const n = Math.round(Number(value) || 0);
+  return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
 export const MyTicketsModal: React.FC<MyTicketsModalProps> = ({
   tickets,
   onClose,
@@ -24,12 +30,12 @@ export const MyTicketsModal: React.FC<MyTicketsModalProps> = ({
             </div>
             <div>
               <h3 className="font-heading font-black text-lg text-white">
-                Mis Boletos Registrados
+                Mis boletos registrados
               </h3>
               <p className="text-xs text-slate-400">
                 {tickets.length > 0
-                  ? `${tickets.length} pedido(s) certificado(s) ante notario`
-                  : 'Aún no tienes boletos registrados'}
+                  ? `${tickets.length} pedido(s) registrado(s)`
+                  : 'Aún no tienes números registrados'}
               </p>
             </div>
           </div>
@@ -49,10 +55,10 @@ export const MyTicketsModal: React.FC<MyTicketsModalProps> = ({
                 <Ticket className="w-8 h-8" />
               </div>
               <h4 className="font-heading font-bold text-lg text-[#111827]">
-                No tienes boletos todavía
+                No tienes números todavía
               </h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Participa ahora por el Mini Cooper Cabrio S 0km y tus números certificados aparecerán aquí de forma inmediata.
+                Participa ahora por el Volkswagen Gol 98 y tus números aparecerán aquí de forma inmediata.
               </p>
               <div>
                 <button
@@ -63,7 +69,7 @@ export const MyTicketsModal: React.FC<MyTicketsModalProps> = ({
                   className="inline-flex items-center gap-2 bg-[#FF2D78] hover:bg-[#E01A63] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-full shadow-glow-button cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Elegir Boletos Ahora
+                  Elegir números ahora
                 </button>
               </div>
             </div>
@@ -85,13 +91,13 @@ export const MyTicketsModal: React.FC<MyTicketsModalProps> = ({
                     </div>
                     <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      Certificado Notarial #42
+                      Participación registrada
                     </span>
                   </div>
 
                   <div className="mb-4">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
-                      Números Asignados:
+                      Números asignados:
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {t.numbers.map((num) => (
@@ -108,12 +114,12 @@ export const MyTicketsModal: React.FC<MyTicketsModalProps> = ({
                   <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-200">
                     <div className="flex items-center gap-2">
                       <QrCode className="w-4 h-4 text-slate-700" />
-                      <span className="text-[11px]">Titular: {t.buyerName} ({t.totalPrice}€)</span>
+                      <span className="text-[11px]">Titular: {t.buyerName} ({formatPrice(t.totalPrice)})</span>
                     </div>
 
                     <button
                       onClick={() => {
-                        alert(`Descargando comprobante oficial para el pedido ${t.orderNumber}...`);
+                        alert(`Descargando comprobante para el pedido ${t.orderNumber}...`);
                       }}
                       className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF2D78] hover:underline cursor-pointer"
                     >
