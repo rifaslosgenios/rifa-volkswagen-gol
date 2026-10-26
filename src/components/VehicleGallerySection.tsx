@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VEHICLE_GALLERY_PHOTOS } from '../data/mockData';
-import { Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+// Importación para que Vite cargue la imagen también en Vercel
+import mascotaGaleriaImg from '../assets/mascota (2).png';
 
-export const VehicleGallerySection: React.FC = () => {
+interface VehicleGallerySectionProps {
+    onOpenPurchaseModal: () => void;
+}
+
+export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ onOpenPurchaseModal }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -60,7 +66,10 @@ export const VehicleGallerySection: React.FC = () => {
     };
 
     return (
-        <section className="relative py-20 bg-slate-900 text-white overflow-hidden" id="galeria">
+        /* scroll-mt-24: al llegar con "Ver vehículo", la página se detiene un poco antes
+           para que el menú fijo no tape el título de la sección.
+           pt-12 lg:pt-20: menos aire arriba en celular (48px); en computador se queda en 80px. */
+        <section className="relative pt-12 pb-20 lg:pt-20 bg-slate-900 text-white overflow-hidden scroll-mt-24" id="galeria">
 
             {/* MASCOTA 2 - BURBUJA PEGADA A LA IMAGEN */}
             <motion.div
@@ -73,7 +82,7 @@ export const VehicleGallerySection: React.FC = () => {
             >
                 <div className="relative">
                     <img
-                        src="/src/assets/mascota (2).png"
+                        src={mascotaGaleriaImg}
                         alt="Mascota Galería"
                         className="w-full h-auto object-contain drop-shadow-2xl origin-top-right"
                     />
@@ -82,7 +91,6 @@ export const VehicleGallerySection: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.7 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: false, amount: 0.1 }}
-                        transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
                         animate={{
                             rotate: [0, 1.5, -1.5, 1.5, 0],
                             y: [0, -3, 0]
@@ -104,17 +112,43 @@ export const VehicleGallerySection: React.FC = () => {
             </motion.div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="text-center max-w-2xl mx-auto mb-10">
+                <div className="text-center max-w-2xl mx-auto mb-8">
                     <span className="text-xs font-black tracking-widest uppercase text-[#E60012]">
                         GALERÍA EXCLUSIVA
                     </span>
-                    <h2 className="font-heading font-black text-3xl sm:text-5xl text-white mt-2 tracking-tight">
-                        CONOCE EL CLÁSICO Y SUS MODELOS
+                    <h2 className="font-heading font-extrabold text-xl sm:text-2xl lg:text-3xl text-white mt-3 tracking-tight leading-snug">
+                        Este Gol ya tiene el próximo dueño <span className="text-[#FFC93C]">en camino</span>. Con una boleta de <span className="text-[#E60012]">$5.000</span>, <span className="text-[#E60012]">puedes ser tú</span>.
                     </h2>
-                    <p className="text-slate-400 mt-3 text-sm sm:text-base">
-                        Explora la sesión fotográfica. Desliza para ver más y haz clic en la imagen central para verla en alta definición.
-                    </p>
                 </div>
+
+                {/* MASCOTA EN CELULAR: fila propia entre el texto y las fotos (en computador se usa la mascota flotante de arriba) */}
+                <motion.div
+                    initial={{ opacity: 0, x: 60 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: false, amount: 0.3 }}
+                    transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="lg:hidden flex items-center justify-center gap-1 -mt-4 mb-6 pointer-events-none"
+                >
+                    <motion.div
+                        animate={{ rotate: [0, 1.5, -1.5, 1.5, 0], y: [0, -3, 0] }}
+                        transition={{
+                            rotate: { repeat: Infinity, duration: 2.5, ease: "easeInOut" },
+                            y: { repeat: Infinity, duration: 3, ease: "easeInOut" }
+                        }}
+                        className="relative bg-white px-3 py-2.5 rounded-2xl shadow-2xl border-2 border-slate-100 max-w-[150px] sm:max-w-[190px] sm:px-4 sm:py-3"
+                    >
+                        <div className="absolute -right-1.5 top-5 w-3 h-3 bg-white border-t-2 border-r-2 border-slate-100 transform rotate-45"></div>
+                        <p className="text-[11px] sm:text-sm font-black text-[#111827] uppercase tracking-tight leading-snug text-center">
+                            ¡BONITO EL CARRO! 🚗 <br />
+                            <span className="text-[#E60012] text-xs sm:text-base">¿CIERTO?</span>
+                        </p>
+                    </motion.div>
+                    <img
+                        src={mascotaGaleriaImg}
+                        alt="Mascota Galería"
+                        className="w-24 sm:w-32 h-auto object-contain drop-shadow-2xl"
+                    />
+                </motion.div>
 
                 <div className="relative w-full h-[350px] sm:h-[420px] md:h-[500px] flex justify-center items-center">
                     <AnimatePresence initial={false}>
@@ -158,7 +192,12 @@ export const VehicleGallerySection: React.FC = () => {
                     </AnimatePresence>
                 </div>
 
-                <div className="flex justify-center items-center gap-6 mt-8">
+                {/* Pista solo para celular (en computador el ojo rojo aparece al pasar el cursor) */}
+                <p className="lg:hidden text-center text-xs text-slate-400 mt-6">
+                    Toca la foto del centro para ampliarla
+                </p>
+
+                <div className="flex justify-center items-center gap-6 mt-4 lg:mt-8">
                     <button
                         onClick={prevSlide}
                         className="text-slate-400 hover:text-[#E60012] hover:bg-white/5 p-2 rounded-full transition-all duration-300 cursor-pointer"
@@ -188,6 +227,19 @@ export const VehicleGallerySection: React.FC = () => {
                     >
                         <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
                     </button>
+                </div>
+
+                {/* Llamado a la acción: quien se convence viendo el carro puede elegir sus números */}
+                <div className="flex justify-center mt-8">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onOpenPurchaseModal}
+                        className="inline-flex items-center justify-center gap-2 bg-[#E60012] text-white text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-full shadow-glow-button cursor-pointer"
+                    >
+                        <span>ELEGIR NÚMEROS</span>
+                        <Sparkles className="w-4 h-4 fill-white text-white shrink-0" />
+                    </motion.button>
                 </div>
             </div>
 

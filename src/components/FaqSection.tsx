@@ -32,7 +32,7 @@ export const FaqSection: React.FC = () => {
   };
 
   return (
-    <section className="py-16 bg-slate-50 overflow-hidden" data-purpose="faq-accordion-list" id="faq">
+    <section className="pt-8 pb-16 bg-slate-50 overflow-hidden" data-purpose="faq-accordion-list" id="faq">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Encabezado animado */}

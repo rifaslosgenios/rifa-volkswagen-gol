@@ -22,6 +22,31 @@ interface PurchaseModalProps {
   onPurchaseComplete: (ticket: PurchasedTicket) => void;
 }
 
+// Precio de un boleto suelto (sirve para calcular cuántos boletos gratis trae cada paquete)
+const UNIT_PRICE = 5000;
+
+// Formatea 25000 -> $25.000
+const formatPrice = (value: number | string): string => {
+  const n = Math.round(Number(value) || 0);
+  return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+// Título de cada paso: círculo con número + pregunta sencilla
+const StepTitle: React.FC<{ n: number; title: string; hint?: string }> = ({ n, title, hint }) => (
+  <div className="flex items-start gap-3 mb-3">
+    <span className="shrink-0 w-8 h-8 rounded-full bg-[#111827] text-white font-heading font-black text-base flex items-center justify-center">
+      {n}
+    </span>
+    <div>
+      <h4 className="font-heading font-black text-lg sm:text-xl text-[#111827] leading-tight">{title}</h4>
+      {hint && <p className="text-sm text-slate-500 mt-0.5 leading-snug">{hint}</p>}
+    </div>
+  </div>
+);
+
+const inputClass =
+  'w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#FF2D78]';
+
 export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   initialPackage,
   onClose,
@@ -73,7 +98,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     setManualInputError('');
     const cleaned = currentManualInput.trim();
     if (!/^\d{1,4}$/.test(cleaned)) {
-      setManualInputError('Introduce un número de 1 a 4 dígitos (0000 a 9999)');
+      setManualInputError('Escribe un número de 1 a 4 dígitos (de 0000 a 9999)');
       return;
     }
     const formatted = cleaned.padStart(4, '0');
@@ -83,7 +108,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     }
     if (manualNumbers.length >= selectedPackage.totalNumbers) {
       setManualInputError(
-        `Tu paquete incluye ${selectedPackage.totalNumbers} números. Ya has completado la selección.`
+        `Tu paquete incluye ${selectedPackage.totalNumbers} números. Ya completaste la selección.`
       );
       return;
     }
@@ -207,35 +232,41 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     }
   };
 
+  // La ventana es ancha solo mientras se llena el formulario
+  const isFormView = !completedTicket && !isProcessing;
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-100 my-8">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+      <div
+        className={`relative bg-white rounded-3xl w-full ${isFormView ? 'max-w-5xl' : 'max-w-2xl'} max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100`}
+      >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#111827] to-slate-900 text-white p-6 flex items-center justify-between">
+        <div className="shrink-0 bg-gradient-to-r from-[#111827] to-slate-900 text-white px-5 py-4 sm:px-8 sm:py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FF2D78] flex items-center justify-center text-white">
+            <div className="w-11 h-11 rounded-2xl bg-[#FF2D78] flex items-center justify-center text-white shrink-0">
               <Sparkles className="w-5 h-5 fill-white" />
             </div>
             <div>
-              <h3 className="font-heading font-black text-lg text-white">
-                Comprar Boletos Oficiales
+              <h3 className="font-heading font-black text-lg sm:text-2xl text-white leading-tight">
+                Compra tus boletos
               </h3>
-              <p className="text-xs text-slate-400">
-                Reserva segura con control de inventario en tiempo real
+              <p className="text-xs sm:text-sm text-slate-300">
+                Solo 4 pasos sencillos y listo
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Cerrar"
+            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 max-h-[80vh] overflow-y-auto">
-          {completedTicket ? (
+        {completedTicket ? (
+          <div className="flex-1 overflow-y-auto p-6">
             <div className="text-center py-4 space-y-6 animate-in fade-in zoom-in-95 duration-300">
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-10 h-10" />
@@ -248,7 +279,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                 <h4 className="font-heading font-black text-2xl text-[#111827] mt-1">
                   ¡Enhorabuena, {completedTicket.buyerName}!
                 </h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
                   {paymentMethod === 'mercadopago'
                     ? 'Tus números están bloqueados temporalmente. Haz clic en el botón de abajo para ir a pagar de forma segura en Mercado Pago.'
                     : 'Tus números están reservados por 2 horas. Validaremos tu comprobante cargado para confirmarlos definitivamente.'}
@@ -257,7 +288,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
               {paymentMethod === 'mercadopago' && (
                 <div className="bg-[#FFF0F5] border-2 border-[#FF2D78] p-5 rounded-3xl space-y-3 shadow-md">
-                  <p className="text-xs font-bold text-slate-800">
+                  <p className="text-sm font-bold text-slate-800">
                     Paso final: Realiza tu pago oficial en la plataforma segura de Mercado Pago.
                   </p>
                   <a
@@ -308,20 +339,22 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
               <div className="flex flex-wrap gap-3 justify-center">
                 <button
                   onClick={() => alert('Comprobante digital descargado.')}
-                  className="inline-flex items-center gap-2 bg-[#111827] hover:bg-slate-800 text-white text-xs font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 bg-[#111827] hover:bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
                   Descargar Comprobante
                 </button>
                 <button
                   onClick={onClose}
-                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
                 >
                   Cerrar
                 </button>
               </div>
             </div>
-          ) : isProcessing ? (
+          </div>
+        ) : isProcessing ? (
+          <div className="flex-1 overflow-y-auto p-6">
             <div className="py-16 text-center space-y-4">
               <div className="relative w-20 h-20 mx-auto">
                 <div className="absolute inset-0 rounded-full border-4 border-slate-200"></div>
@@ -333,328 +366,373 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
               <h4 className="font-heading font-black text-xl text-[#111827]">
                 Sincronizando con Firebase...
               </h4>
-              <p className="text-xs text-slate-500 font-medium animate-pulse">
+              <p className="text-sm text-slate-500 font-medium animate-pulse">
                 {processingStep}
               </p>
             </div>
-          ) : (
-            <form onSubmit={handlePayment} className="space-y-6">
-              {/* Package Selector */}
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
-                  1. Selecciona tu Paquete de Boletos
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {TICKET_PACKAGES.map((pkg) => {
-                    const isSelected = selectedPackage.id === pkg.id;
-                    return (
-                      <div
-                        key={pkg.id}
-                        onClick={() => {
-                          setSelectedPackage(pkg);
-                          setManualNumbers([]);
-                        }}
-                        className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left relative ${isSelected
-                          ? 'border-[#FF2D78] bg-[#FFF0F5]/50 shadow-sm'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                          }`}
-                      >
-                        {pkg.isPopular && (
-                          <span className="absolute -top-2.5 right-3 bg-[#FF2D78] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
-                            TOP VENTAS
-                          </span>
-                        )}
-                        <span className="font-heading font-bold text-xs text-slate-900 block">
-                          {pkg.name}
-                        </span>
-                        <div className="flex items-baseline gap-1 mt-1">
-                          <span className="font-heading font-black text-lg text-[#FF2D78]">
-                            ${pkg.price}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-500 block mt-1 font-medium">
-                          {pkg.totalNumbers} números en sorteo
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+          </div>
+        ) : (
+          <form onSubmit={handlePayment} className="flex flex-col flex-1 min-h-0">
+            {/* Zona con scroll: dos columnas en computador, una en celular */}
+            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
 
-              {/* Number Selection Mode */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                  2. Asignación de Números (0000 - 9999)
-                </label>
-                <div className="flex gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAssignmentMode('random');
-                      setManualNumbers([]);
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${assignmentMode === 'random'
-                      ? 'bg-[#111827] text-white shadow-sm'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
-                  >
-                    🎲 Asignación Aleatoria
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAssignmentMode('manual')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${assignmentMode === 'manual'
-                      ? 'bg-[#111827] text-white shadow-sm'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
-                  >
-                    ✨ Elegir Mis Números
-                  </button>
-                </div>
-
-                {assignmentMode === 'random' ? (
-                  <div className="pt-2">
-                    <p className="text-[11px] text-slate-500 mb-2 font-medium">
-                      Tus {selectedPackage.totalNumbers} números asignados aleatoriamente para este paquete:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {previewRandomNumbers.map((num) => (
-                        <span
-                          key={num}
-                          className="px-3 py-1 bg-[#111827] text-white font-heading font-black text-sm rounded-lg tracking-wider"
-                        >
-                          #{num}
-                        </span>
-                      ))}
+                {/* ===== COLUMNA IZQUIERDA: boletos y números ===== */}
+                <div className="space-y-7">
+                  {/* PASO 1 */}
+                  <div>
+                    <StepTitle n={1} title="¿Cuántos boletos quieres?" hint="Toca el paquete que prefieras" />
+                    <div className="space-y-3">
+                      {TICKET_PACKAGES.map((pkg) => {
+                        const isSelected = selectedPackage.id === pkg.id;
+                        const freeTickets = Math.max(
+                          0,
+                          pkg.totalNumbers - Math.round(Number(pkg.price) / UNIT_PRICE)
+                        );
+                        return (
+                          <button
+                            type="button"
+                            key={pkg.id}
+                            onClick={() => {
+                              setSelectedPackage(pkg);
+                              setManualNumbers([]);
+                            }}
+                            className={`relative w-full text-left flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${isSelected
+                              ? 'border-[#FF2D78] bg-[#FFF0F5] shadow-sm'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                              }`}
+                          >
+                            {pkg.isPopular && (
+                              <span className="absolute -top-2.5 right-4 bg-[#FF2D78] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                                TOP VENTAS
+                              </span>
+                            )}
+                            <span
+                              className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#FF2D78] bg-[#FF2D78]' : 'border-slate-300 bg-white'
+                                }`}
+                            >
+                              {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-white" />}
+                            </span>
+                            <span className="flex-1">
+                              <span className="font-heading font-bold text-base text-slate-900 block leading-tight">
+                                {pkg.name}
+                              </span>
+                              <span className="text-sm text-slate-600 block mt-0.5">
+                                {pkg.totalNumbers} {pkg.totalNumbers === 1 ? 'número' : 'números'} para el sorteo
+                              </span>
+                              {freeTickets > 0 && (
+                                <span className="inline-block mt-1 text-xs font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                  🎁 ¡{freeTickets} {freeTickets === 1 ? 'boleto gratis' : 'boletos gratis'}!
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-heading font-black text-xl text-[#FF2D78] shrink-0">
+                              {formatPrice(pkg.price)}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewRandomNumbers(generateRandomNumbers(selectedPackage.totalNumbers))}
-                      className="mt-3 text-[11px] font-bold text-[#FF2D78] hover:underline cursor-pointer block"
-                    >
-                      🔄 Generar otros números aleatorios
-                    </button>
                   </div>
-                ) : (
-                  <div className="space-y-3 pt-2">
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      Elige hasta {selectedPackage.totalNumbers} números manualmente (si eliges menos, el resto se completarán al azar):
-                    </p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        maxLength={4}
-                        placeholder="0000"
-                        value={currentManualInput}
-                        onChange={(e) => setCurrentManualInput(e.target.value.replace(/\D/g, ''))}
-                        className="w-28 px-3 py-2 bg-white border border-slate-300 rounded-xl font-heading font-black text-center text-lg focus:outline-none focus:border-[#FF2D78]"
-                      />
+
+                  {/* PASO 2 */}
+                  <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
+                    <StepTitle
+                      n={2}
+                      title="Tus números de la suerte"
+                      hint="Del 0000 al 9999. Escoge cómo los quieres"
+                    />
+                    <div className="grid grid-cols-2 gap-2 mb-4">
                       <button
                         type="button"
-                        onClick={handleAddManualNumber}
-                        className="px-4 py-2 bg-[#FF2D78] hover:bg-[#E01A63] text-white text-xs font-bold uppercase rounded-xl transition-colors cursor-pointer"
+                        onClick={() => {
+                          setAssignmentMode('random');
+                          setManualNumbers([]);
+                        }}
+                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${assignmentMode === 'random'
+                          ? 'bg-[#111827] text-white shadow-sm'
+                          : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
                       >
-                        Añadir
+                        🎲 Al azar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAssignmentMode('manual')}
+                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${assignmentMode === 'manual'
+                          ? 'bg-[#111827] text-white shadow-sm'
+                          : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                      >
+                        ✨ Yo los elijo
                       </button>
                     </div>
 
-                    {manualInputError && (
-                      <p className="text-[11px] text-red-500 font-semibold">{manualInputError}</p>
-                    )}
-
-                    {manualNumbers.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {manualNumbers.map((num) => (
-                          <span
-                            key={num}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#111827] text-white text-xs font-bold rounded-lg"
-                          >
-                            #{num}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveManualNumber(num)}
-                              className="text-slate-400 hover:text-white"
+                    {assignmentMode === 'random' ? (
+                      <div>
+                        <p className="text-sm text-slate-600 mb-3 font-medium">
+                          Nosotros te damos {selectedPackage.totalNumbers} {selectedPackage.totalNumbers === 1 ? 'número' : 'números'} al azar:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {previewRandomNumbers.map((num) => (
+                            <span
+                              key={num}
+                              className="px-3.5 py-2 bg-[#111827] text-white font-heading font-black text-base rounded-xl tracking-wider"
                             >
-                              ×
-                            </button>
-                          </span>
-                        ))}
+                              #{num}
+                            </span>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewRandomNumbers(generateRandomNumbers(selectedPackage.totalNumbers))}
+                          className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#FF2D78] bg-white border-2 border-[#FF2D78] hover:bg-[#FFF0F5] px-4 py-2 rounded-full cursor-pointer"
+                        >
+                          🔄 Cambiar mis números
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-slate-600 font-medium">
+                          Escribe hasta {selectedPackage.totalNumbers} {selectedPackage.totalNumbers === 1 ? 'número' : 'números'} y toca “Añadir”. Si eliges menos, completamos el resto al azar.
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="0000"
+                            value={currentManualInput}
+                            onChange={(e) => setCurrentManualInput(e.target.value.replace(/\D/g, ''))}
+                            className="w-32 px-3 py-3 bg-white border-2 border-slate-300 rounded-xl font-heading font-black text-center text-2xl focus:outline-none focus:border-[#FF2D78]"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddManualNumber}
+                            className="px-6 py-3 bg-[#FF2D78] hover:bg-[#E01A63] text-white text-sm font-bold uppercase rounded-xl transition-colors cursor-pointer"
+                          >
+                            Añadir
+                          </button>
+                        </div>
+
+                        {manualInputError && (
+                          <p className="text-sm text-red-600 font-semibold">{manualInputError}</p>
+                        )}
+
+                        {manualNumbers.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {manualNumbers.map((num) => (
+                              <span
+                                key={num}
+                                className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#111827] text-white text-base font-heading font-black rounded-xl"
+                              >
+                                #{num}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveManualNumber(num)}
+                                  aria-label={`Quitar el número ${num}`}
+                                  className="text-slate-300 hover:text-white text-lg leading-none cursor-pointer"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-
-              {/* Buyer Contact Information */}
-              <div className="space-y-3">
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
-                  3. Datos del Titular
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Nombre y Apellidos *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej: Juan Pérez"
-                      value={buyerName}
-                      onChange={(e) => setBuyerName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-[#FF2D78]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Teléfono WhatsApp *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="300 000 0000"
-                      value={buyerPhone}
-                      onChange={(e) => setBuyerPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-[#FF2D78]"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Correo Electrónico *</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="tucorreo@ejemplo.com"
-                      value={buyerEmail}
-                      onChange={(e) => setBuyerEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-[#FF2D78]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Method & Proof Upload */}
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
-                  4. Método de Pago y Comprobante
-                </label>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('mercadopago')}
-                    className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${paymentMethod === 'mercadopago'
-                      ? 'border-[#FF2D78] bg-[#FFF0F5] font-bold text-[#FF2D78]'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                  >
-                    <CreditCard className="w-5 h-5 mx-auto mb-1 text-[#111827]" />
-                    <span className="text-xs block font-bold">Mercado Pago</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('nequi')}
-                    className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${paymentMethod === 'nequi'
-                      ? 'border-[#FF2D78] bg-[#FFF0F5] font-bold text-[#FF2D78]'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                  >
-                    <Smartphone className="w-5 h-5 mx-auto mb-1 text-purple-600" />
-                    <span className="text-xs block font-bold">Nequi</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('daviplata')}
-                    className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${paymentMethod === 'daviplata'
-                      ? 'border-[#FF2D78] bg-[#FFF0F5] font-bold text-[#FF2D78]'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                  >
-                    <Smartphone className="w-5 h-5 mx-auto mb-1 text-red-600" />
-                    <span className="text-xs block font-bold">Daviplata</span>
-                  </button>
                 </div>
 
-                {paymentMethod === 'nequi' && (
-                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl mb-3 space-y-1 text-xs text-purple-900">
-                    <p className="font-bold">📲 Datos para transferencia Nequi:</p>
-                    <p>Número / Llave: <strong className="text-purple-700 text-sm">300 000 0000</strong></p>
-                    <p className="text-[11px] text-purple-600">Realiza tu transferencia y adjunta la captura del comprobante abajo.</p>
-                  </div>
-                )}
-
-                {paymentMethod === 'daviplata' && (
-                  <div className="bg-red-50 border border-red-200 p-4 rounded-2xl mb-3 space-y-1 text-xs text-red-900">
-                    <p className="font-bold">📲 Datos para transferencia Daviplata:</p>
-                    <p>Número / Llave: <strong className="text-red-700 text-sm">300 000 0000</strong></p>
-                    <p className="text-[11px] text-red-600">Realiza tu transferencia y adjunta la captura del comprobante abajo.</p>
-                  </div>
-                )}
-
-                {(paymentMethod === 'nequi' || paymentMethod === 'daviplata') && (
-                  <div className="bg-slate-50 border-2 border-dashed border-slate-300 p-4 rounded-2xl space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">
-                        Sube tu comprobante de transferencia ({paymentMethod.toUpperCase()}): *
-                      </span>
-                      <Upload className="w-4 h-4 text-[#FF2D78]" />
+                {/* ===== COLUMNA DERECHA: datos y pago ===== */}
+                <div className="space-y-7">
+                  {/* PASO 3 */}
+                  <div>
+                    <StepTitle n={3} title="Tus datos" hint="Para avisarte si resultas ganador" />
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="buyer-name" className="block text-sm font-bold text-slate-700 mb-1.5">
+                          Nombre y apellidos *
+                        </label>
+                        <input
+                          id="buyer-name"
+                          type="text"
+                          required
+                          autoComplete="name"
+                          placeholder="Ej: Juan Pérez"
+                          value={buyerName}
+                          onChange={(e) => setBuyerName(e.target.value)}
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="buyer-phone" className="block text-sm font-bold text-slate-700 mb-1.5">
+                          Celular (WhatsApp) *
+                        </label>
+                        <input
+                          id="buyer-phone"
+                          type="tel"
+                          required
+                          autoComplete="tel"
+                          placeholder="300 000 0000"
+                          value={buyerPhone}
+                          onChange={(e) => setBuyerPhone(e.target.value)}
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="buyer-email" className="block text-sm font-bold text-slate-700 mb-1.5">
+                          Correo electrónico *
+                        </label>
+                        <input
+                          id="buyer-email"
+                          type="email"
+                          required
+                          autoComplete="email"
+                          placeholder="tucorreo@ejemplo.com"
+                          value={buyerEmail}
+                          onChange={(e) => setBuyerEmail(e.target.value)}
+                          className={inputClass}
+                        />
+                      </div>
                     </div>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      required
-                      onChange={handleFileChange}
-                      className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#111827] file:text-white hover:file:bg-slate-800 cursor-pointer"
-                    />
-                    {proofFileName && (
-                      <p className="text-[11px] text-emerald-600 font-semibold">
-                        ✓ Archivo adjunto: {proofFileName}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-slate-400">
-                      Tus números quedarán reservados por 2 horas mientras validamos el comprobante.
-                    </p>
                   </div>
-                )}
-              </div>
 
-              {/* Checkbox Obligatorio de Términos, Condiciones y Habeas Data */}
-              <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  required
-                  className="mt-0.5 w-4 h-4 text-[#FF2D78] rounded border-slate-300 focus:ring-[#FF2D78] cursor-pointer"
-                />
-                <label htmlFor="terms" className="text-xs text-slate-600 cursor-pointer leading-relaxed">
-                  Acepto los <span className="font-bold text-slate-800">Términos, Condiciones</span> y autorizo el <span className="font-bold text-slate-800">Tratamiento de Datos Personales (Habeas Data)</span> para la validación de mi participación en el sorteo. *
-                </label>
-              </div>
+                  {/* PASO 4 */}
+                  <div>
+                    <StepTitle n={4} title="¿Cómo vas a pagar?" hint="Toca una opción" />
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('mercadopago')}
+                        className={`p-3 py-4 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'mercadopago'
+                          ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
+                      >
+                        <CreditCard className="w-6 h-6 mx-auto mb-1.5 text-[#111827]" />
+                        <span className="text-sm block font-bold leading-tight">Mercado Pago</span>
+                      </button>
 
-              {/* Summary and Pay Button */}
-              <div className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs text-slate-500 block">Total a pagar:</span>
-                  <span className="font-heading font-black text-3xl text-[#FF2D78]">
-                    ${selectedPackage.price}
-                  </span>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('nequi')}
+                        className={`p-3 py-4 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'nequi'
+                          ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
+                      >
+                        <Smartphone className="w-6 h-6 mx-auto mb-1.5 text-purple-600" />
+                        <span className="text-sm block font-bold leading-tight">Nequi</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('daviplata')}
+                        className={`p-3 py-4 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'daviplata'
+                          ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
+                      >
+                        <Smartphone className="w-6 h-6 mx-auto mb-1.5 text-red-600" />
+                        <span className="text-sm block font-bold leading-tight">Daviplata</span>
+                      </button>
+                    </div>
+
+                    {paymentMethod === 'mercadopago' && (
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-700">
+                        💳 Al terminar, te llevamos a la página segura de Mercado Pago para que pagues.
+                      </div>
+                    )}
+
+                    {paymentMethod === 'nequi' && (
+                      <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-purple-900">
+                        <p className="font-bold">📲 Datos para transferencia Nequi:</p>
+                        <p>Número / Llave: <strong className="text-purple-700 text-base">300 000 0000</strong></p>
+                        <p className="text-xs text-purple-700">Haz tu transferencia y sube abajo la captura del comprobante.</p>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'daviplata' && (
+                      <div className="bg-red-50 border border-red-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-red-900">
+                        <p className="font-bold">📲 Datos para transferencia Daviplata:</p>
+                        <p>Número / Llave: <strong className="text-red-700 text-base">300 000 0000</strong></p>
+                        <p className="text-xs text-red-700">Haz tu transferencia y sube abajo la captura del comprobante.</p>
+                      </div>
+                    )}
+
+                    {(paymentMethod === 'nequi' || paymentMethod === 'daviplata') && (
+                      <div className="bg-slate-50 border-2 border-dashed border-slate-300 p-4 rounded-2xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-700">
+                            Sube tu comprobante de {paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}: *
+                          </span>
+                          <Upload className="w-5 h-5 text-[#FF2D78]" />
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          required
+                          onChange={handleFileChange}
+                          className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-[#111827] file:text-white hover:file:bg-slate-800 cursor-pointer"
+                        />
+                        {proofFileName && (
+                          <p className="text-sm text-emerald-600 font-semibold">
+                            ✓ Archivo adjunto: {proofFileName}
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-500">
+                          Tus números quedan reservados por 2 horas mientras revisamos el comprobante.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Términos y Habeas Data (obligatorio) */}
+                  <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      required
+                      className="mt-0.5 w-6 h-6 shrink-0 text-[#FF2D78] rounded border-slate-300 focus:ring-[#FF2D78] cursor-pointer"
+                    />
+                    <label htmlFor="terms" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
+                      Acepto los <span className="font-bold text-slate-900">Términos y Condiciones</span> y autorizo el <span className="font-bold text-slate-900">Tratamiento de Datos Personales (Habeas Data)</span> para validar mi participación en el sorteo. *
+                    </label>
+                  </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#FF2D78] hover:bg-[#E01A63] text-white font-heading font-bold text-xs uppercase tracking-wider px-8 py-4 rounded-full shadow-md transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <span>Procesando en Firebase...</span>
-                  ) : (
-                    <>
-                      <span>CONFIRMAR Y RESERVAR</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
               </div>
-            </form>
-          )}
-        </div>
+            </div>
+
+            {/* Barra fija abajo: siempre se ve el total y el botón */}
+            <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between gap-3 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
+              <div>
+                <span className="text-xs sm:text-sm text-slate-500 block leading-none">Total a pagar</span>
+                <span className="font-heading font-black text-2xl sm:text-3xl text-[#111827] leading-tight">
+                  {formatPrice(selectedPackage.price)}
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="inline-flex items-center justify-center gap-2 bg-[#C6F235] hover:bg-[#B5E01F] text-[#111827] font-heading font-black text-sm sm:text-base uppercase tracking-wide px-5 sm:px-10 py-4 rounded-full shadow-lg transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isProcessing ? (
+                  <span>Procesando...</span>
+                ) : (
+                  <>
+                    <span>CONFIRMAR Y RESERVAR</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

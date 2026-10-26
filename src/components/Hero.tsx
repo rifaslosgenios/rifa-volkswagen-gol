@@ -3,18 +3,15 @@ import { motion } from 'framer-motion';
 import {
   Sparkles,
   ArrowDown,
-  Award,
-  ShieldCheck,
-  Fuel,
-  Truck,
-  ChevronLeft,
-  ChevronRight,
+  Check,
+  MapPin,
   Ticket
 } from 'lucide-react';
-import { HERO_CAROUSEL_PHOTOS } from '../data/mockData';
 // Importaciones obligatorias para que Vite cargue los archivos en Vercel
 import mascotaImg from '../assets/mascota (1).png';
 import videoBolas from '../assets/animacion-bolas.mp4';
+import vwLogo from '../assets/vw-logo.webp'; // Logo de Volkswagen para el título
+import { HeroPhotoCarousel, useIsDesktop } from './HeroPhotoCarousel';
 
 interface HeroProps {
   onOpenPurchaseModal: () => void;
@@ -41,20 +38,17 @@ const rightColumnVariants = {
   show: { opacity: 1, x: 0, transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 } }
 };
 
+// Beneficios que recibe el ganador (se muestran en el recuadro oscuro)
+const PRIZE_BENEFITS = ['Traspaso', 'SOAT', 'Tecnomecánica', 'Tanque lleno'];
+
 export const Hero: React.FC<HeroProps> = ({
   onOpenPurchaseModal,
-  onOpenNotaryModal,
 }) => {
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [raffleDigits, setRaffleDigits] = useState(['4', '6', '0', '0']);
 
-  const nextPhoto = () => setCurrentPhotoIndex((prev) => (prev + 1) % HERO_CAROUSEL_PHOTOS.length);
-  const prevPhoto = () => setCurrentPhotoIndex((prev) => (prev - 1 + HERO_CAROUSEL_PHOTOS.length) % HERO_CAROUSEL_PHOTOS.length);
-
-  useEffect(() => {
-    const interval = setInterval(nextPhoto, 4000);
-    return () => clearInterval(interval);
-  }, []);
+  // En computador el carrusel de fotos va en la tercera columna del Hero.
+  // En celular lo coloca App.tsx después de la galería oscura.
+  const isDesktop = useIsDesktop();
 
   // Contador lento mostrando números disponibles
   useEffect(() => {
@@ -65,16 +59,45 @@ export const Hero: React.FC<HeroProps> = ({
     return () => clearInterval(raffleInterval);
   }, []);
 
-  // Smooth Scroll a Detalles del Vehículo
+  // Smooth Scroll a la galería de fotos (sección oscura con el carrusel)
   const scrollToVehicle = () => {
-    const section = document.getElementById('premio');
+    const section = document.getElementById('galeria');
     if (section) {
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
+  // Botones de acción. Se usan en dos sitios:
+  // - celular: dentro de la columna derecha de la fila (junto al recuadro negro)
+  // - computador: debajo del video
+  const ActionButtons = ({ className }: { className: string }) => (
+    <div className={className}>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onOpenPurchaseModal}
+        className="w-full inline-flex items-center justify-center gap-1.5 lg:gap-2 bg-[#E60012] text-white text-[10px] lg:text-xs font-bold uppercase tracking-wide lg:tracking-wider px-2 lg:px-5 py-3 lg:py-4 rounded-full shadow-glow-button cursor-pointer"
+      >
+        <span>ELEGIR NÚMEROS</span>
+        <Sparkles className="w-3.5 h-3.5 lg:w-4 lg:h-4 fill-white text-white shrink-0" />
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.05, backgroundColor: "#f8fafc" }}
+        whileTap={{ scale: 0.95 }}
+        onClick={scrollToVehicle}
+        className="w-full inline-flex items-center justify-center gap-1.5 lg:gap-2 bg-white text-[#111827] text-[10px] lg:text-xs font-bold uppercase tracking-wide lg:tracking-wider px-2 lg:px-5 py-3 lg:py-4 rounded-full border-2 border-slate-200 transition-colors cursor-pointer"
+      >
+        <span>VER VEHÍCULO</span>
+        <ArrowDown className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+      </motion.button>
+    </div>
+  );
+
   return (
-    <section className="relative pt-8 pb-0 lg:pt-20 lg:pb-0 overflow-hidden bg-white" data-purpose="hero-banner">
+    /* pb-10 / lg:pb-14: colchón blanco para que el Hero no toque la sección oscura
+       (y para que el sello "$5.000" del carrusel quepa completo en computador) */
+    <section className="relative pt-8 pb-10 lg:pt-20 lg:pb-14 overflow-hidden bg-white" data-purpose="hero-banner">
 
       {/* MASCOTA Y BURBUJA (Visible en celular y computadora) */}
       <motion.div
@@ -91,19 +114,19 @@ export const Hero: React.FC<HeroProps> = ({
             alt="Mascota Rifa"
             className="w-full h-auto object-contain drop-shadow-2xl origin-top-left"
           />
+          {/* Burbuja: en celular es angosta y vertical (no tapa la cara); en computador es más grande */}
           <motion.div
             initial={{ opacity: 0, scale: 0.7 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: false, amount: 0.1 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             animate={{ rotate: [0, -1.5, 1.5, -1.5, 0], y: [0, -3, 0] }}
             transition={{ rotate: { repeat: Infinity, duration: 2.5, ease: "easeInOut" }, y: { repeat: Infinity, duration: 3, ease: "easeInOut" } }}
-            className="absolute top-3 right-[-80px] sm:right-[-110px] xl:right-[-125px] bg-white px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-100 max-w-[130px] sm:max-w-[175px] xl:max-w-[190px] z-40 pointer-events-auto block"
+            className="absolute top-3 right-[-66px] max-w-[100px] sm:right-[-95px] sm:max-w-[135px] lg:right-[-110px] lg:max-w-[175px] xl:right-[-125px] xl:max-w-[190px] bg-white px-2 sm:px-4 py-2 sm:py-3 xl:px-5 xl:py-4 rounded-xl sm:rounded-2xl shadow-2xl border-2 border-slate-100 z-40 pointer-events-auto block"
           >
             <div className="absolute -left-2 top-4 w-4 h-4 bg-white border-l-2 border-b-2 border-slate-100 transform rotate-45"></div>
-            <p className="text-[9px] sm:text-[11px] font-black text-[#111827] uppercase tracking-tight leading-snug text-center">
+            <p className="text-[9px] sm:text-[11px] xl:text-[15px] font-black text-[#111827] uppercase tracking-tight leading-snug text-center">
               ¡A LA ORDEN, JOVEN! 🐶 <br />
-              <span className="text-[#E60012] text-[10px] sm:text-xs">¿CUÁNTOS NÚMEROS VA A LLEVAR?</span>
+              <span className="text-[#E60012] text-[10px] sm:text-xs xl:text-[17px]">¿CUÁNTOS NÚMEROS VA A LLEVAR?</span>
             </p>
           </motion.div>
         </div>
@@ -111,9 +134,11 @@ export const Hero: React.FC<HeroProps> = ({
 
       <div className="max-w-[95rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 xl:gap-8 items-start pt-2 lg:pl-[240px] xl:pl-[300px]">
+        {/* En computador las 3 columnas se estiran a la misma altura (items-stretch):
+            la foto del vehículo termina a la altura de los botones bajo el video. */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 xl:gap-8 items-start lg:items-stretch pt-2 lg:pl-[240px] xl:pl-[300px]">
 
-          {/* COLUMNA 1 (IZQUIERDA) */}
+          {/* COLUMNA 1 (IZQUIERDA): TÍTULO, VIDEO Y (en computador) BOTONES */}
           <motion.div
             className="lg:col-span-5 w-full flex flex-col"
             variants={containerVariants}
@@ -122,20 +147,37 @@ export const Hero: React.FC<HeroProps> = ({
             exit="hidden"
             viewport={{ once: false, amount: 0.1 }}
           >
-            {/* Título con margen equilibrado */}
-            <div className="ml-16 sm:ml-24 lg:ml-12 xl:ml-16">
-              <motion.div
+            {/* TÍTULO: en celular va a la derecha del perro y de la burbuja; en computador sube a la altura de la burbuja */}
+            <div className="relative z-10 ml-[172px] min-h-[150px] sm:ml-[232px] sm:min-h-[190px] lg:ml-4 lg:mt-12 lg:min-h-0 xl:ml-24 xl:-mt-14">
+              <motion.h1
                 variants={itemVariants}
-                className="font-heading font-black text-4xl sm:text-5xl lg:text-[42px] xl:text-[52px] leading-[1.05] tracking-tight text-[#111827] mb-6 pt-2"
+                aria-label="¿Y si este Volkswagen Gol es tuyo? Boleta: 5.000 pesos"
+                className="font-heading font-black text-[length:clamp(24px,7vw,34px)] sm:text-[40px] lg:text-[32px] xl:text-[48px] leading-[1.05] tracking-tight text-[#111827] mb-6 pt-2"
               >
-                ESTRENA TU <br className="hidden lg:block" />
-                <span className="text-[#E60012]">VOLKSWAGEN GOL</span>
-                <Sparkles className="inline-block w-8 h-8 sm:w-10 sm:h-10 ml-2 text-[#E60012] fill-[#E60012] animate-pulse" />
-              </motion.div>
+                <span className="block whitespace-nowrap">
+                  ¿Y SI ESTE
+                  <img
+                    src={vwLogo}
+                    alt="Volkswagen"
+                    className="inline-block ml-[0.15em]"
+                    style={{ height: '0.85em', width: '0.85em', verticalAlign: '-0.05em' }}
+                  />
+                </span>
+                <span className="block whitespace-nowrap">
+                  <span className="text-[#E60012]">GOL</span> ES TUYO?
+                </span>
+                <span className="block whitespace-nowrap text-[0.85em] mt-1">
+                  BOLETA: <span className="text-[#E60012]">$5.000</span>
+                  <Sparkles className="inline-block w-[0.6em] h-[0.6em] ml-2 text-[#E60012] fill-[#E60012] animate-pulse" />
+                </span>
+              </motion.h1>
             </div>
 
-            {/* VIDEO */}
-            <motion.div variants={itemVariants} className="w-full xl:max-w-[460px] aspect-video bg-white rounded-3xl overflow-hidden shadow-xl border-2 border-slate-100 mb-4 z-10 relative">
+            {/* VIDEO: en celular un poco más angosto (336px) y centrado, igual que la fila de abajo */}
+            <motion.div
+              variants={itemVariants}
+              className="w-full max-w-[336px] mx-auto lg:max-w-none lg:mx-0 xl:max-w-[460px] aspect-video bg-white rounded-3xl overflow-hidden shadow-xl border-2 border-slate-100 mb-4 z-10 relative"
+            >
               <video
                 autoPlay
                 loop
@@ -147,165 +189,110 @@ export const Hero: React.FC<HeroProps> = ({
               </video>
             </motion.div>
 
-            {/* ICONOS HORIZONTALES */}
-            <motion.div variants={itemVariants} className="w-full xl:max-w-[460px] bg-slate-50/80 p-4 rounded-3xl border border-slate-100 shadow-sm backdrop-blur-sm">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <button onClick={onOpenNotaryModal} className="flex flex-col items-center text-center gap-1.5 group cursor-pointer">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-[#E60012] group-hover:bg-[#E60012] group-hover:text-white transition-colors">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <span className="font-heading font-black text-[10px] uppercase tracking-tight text-[#111827] group-hover:text-[#E60012] transition-colors leading-tight">Traspaso<br />Cubierto</span>
-                </button>
-                <div className="flex flex-col items-center text-center gap-1.5">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-[#E60012]">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <span className="font-heading font-black text-[10px] uppercase tracking-tight text-[#111827] leading-tight">Sorteo<br />Oficial</span>
-                </div>
-                <div className="flex flex-col items-center text-center gap-1.5">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-[#E60012]">
-                    <Fuel className="w-5 h-5" />
-                  </div>
-                  <span className="font-heading font-black text-[10px] uppercase tracking-tight text-[#111827] leading-tight">Tanque<br />Lleno</span>
-                </div>
-                <div className="flex flex-col items-center text-center gap-1.5">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-[#E60012]">
-                    <Truck className="w-5 h-5" />
-                  </div>
-                  <span className="font-heading font-black text-[10px] uppercase tracking-tight text-[#111827] leading-tight">Envío<br />Nacional</span>
-                </div>
-              </div>
+            {/* BOTONES (solo computador): debajo del video, uno al lado del otro */}
+            <motion.div variants={itemVariants} className="hidden lg:block w-full xl:max-w-[460px] relative z-10">
+              <ActionButtons className="flex flex-row gap-3 w-full [&>button]:flex-1" />
             </motion.div>
           </motion.div>
 
-          {/* COLUMNA 2 (CENTRO): PRECIO, BOTONES Y CONTADOR (Espacio libre a ambos lados) */}
+          {/* COLUMNA 2 (CENTRO)
+              Celular: cuadrícula de 2 columnas con la misma altura (recuadro negro | botones + contador).
+              Computador: recuadro negro y, justo debajo, el contador. */}
           <motion.div
-            className="lg:col-span-3 z-10 w-full flex flex-col pt-0 lg:-mt-2 gap-5 items-start lg:ml-2 xl:ml-6"
+            className="lg:col-span-3 z-10 w-full max-w-[336px] mx-auto lg:max-w-none lg:mx-0 grid grid-cols-2 gap-3 items-stretch lg:flex lg:flex-col lg:items-start lg:gap-5 lg:-mt-2 lg:ml-2 xl:ml-6"
             variants={containerVariants}
             initial="hidden"
             whileInView="show"
             exit="hidden"
             viewport={{ once: false, amount: 0.1 }}
           >
-            {/* TEXTO LLAMATIVO */}
+            {/* RECUADRO OSCURO: lo que recibe el ganador (sin inclinación en celular) */}
             <motion.div
               variants={itemVariants}
               whileHover={{ scale: 1.03, rotate: 0 }}
-              className="relative z-20 w-full max-w-[220px] xl:max-w-[240px] cursor-pointer mt-4 lg:mt-0"
+              className="relative z-20 w-full lg:max-w-[220px] xl:max-w-[240px]"
             >
-              <div className="absolute -top-4 -right-4 text-[#C6F235] animate-[spin_4s_linear_infinite] z-30">
-                <Sparkles className="w-8 h-8 fill-[#C6F235]" />
+              <div className="absolute -top-3 -right-2 lg:-top-4 lg:-right-4 text-[#C6F235] animate-[spin_4s_linear_infinite] z-30">
+                <Sparkles className="w-6 h-6 lg:w-8 lg:h-8 fill-[#C6F235]" />
               </div>
 
-              <div className="bg-[#111827] text-white px-4 py-5 rounded-3xl shadow-[6px_6px_0px_#C6F235] border-2 border-slate-800 transform -rotate-3 flex flex-col items-center justify-center text-center transition-all duration-300">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-widest text-slate-300 mb-1">¡Asegura tu suerte!</span>
-                <div className="font-heading font-black text-4xl xl:text-[44px] leading-none text-white drop-shadow-md">
-                  $5.000
+              <div className="h-full bg-[#111827] text-white px-3 py-4 lg:px-5 lg:py-6 rounded-3xl shadow-[4px_4px_0px_#C6F235] lg:shadow-[6px_6px_0px_#C6F235] border-2 border-slate-800 lg:transform lg:-rotate-3 flex flex-col items-center justify-center text-center transition-all duration-300">
+                <span className="text-[10px] lg:text-[11px] xl:text-xs font-black uppercase tracking-wider lg:tracking-widest text-slate-300 mb-3">
+                  ¡Si ganas, recibes!
+                </span>
+
+                <ul className="w-full space-y-2 text-left">
+                  {PRIZE_BENEFITS.map((item) => (
+                    <li key={item} className="flex items-center gap-2 lg:gap-2.5">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-[#C6F235] text-[#111827] flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5" strokeWidth={4} />
+                      </span>
+                      <span className="font-heading font-black text-[11px] lg:text-[13px] xl:text-sm uppercase tracking-tight text-white">
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="flex items-center gap-2 lg:gap-2.5">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-[#C6F235] text-[#111827] flex items-center justify-center">
+                      <MapPin className="w-3.5 h-3.5" strokeWidth={3} />
+                    </span>
+                    <span className="font-heading font-black text-[11px] lg:text-[13px] xl:text-sm uppercase tracking-tight text-white">
+                      Entrega en Bogotá
+                    </span>
+                  </li>
+                </ul>
+
+                <span className="mt-4 inline-block bg-[#E60012] text-white font-heading font-black text-[11px] lg:text-sm xl:text-base uppercase tracking-wide px-3 py-1.5 lg:px-4 lg:py-2 rounded-full shadow-lg whitespace-nowrap">
+                  TODO POR $5.000
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Columna derecha en celular (botones + contador). En computador "desaparece" (contents)
+                y solo queda el contador debajo del recuadro negro. */}
+            <div className="flex flex-col gap-3 lg:contents">
+
+              {/* Botones (solo celular) */}
+              <motion.div variants={itemVariants} className="lg:hidden">
+                <ActionButtons className="flex flex-col gap-2" />
+              </motion.div>
+
+              {/* CONTADOR: en celular crece (flex-1) para igualar la altura del recuadro negro */}
+              <motion.div
+                variants={itemVariants}
+                className="flex-1 lg:flex-none bg-slate-900 rounded-3xl p-3 lg:p-4 shadow-2xl border-2 border-slate-800 w-full lg:max-w-[220px] xl:max-w-[240px] flex flex-col items-center justify-center gap-3"
+              >
+                <div className="flex flex-col items-center text-center px-1">
+                  <span className="text-[10px] lg:text-xs text-[#C6F235] font-black tracking-wider lg:tracking-widest uppercase flex items-center justify-center text-center gap-1.5 leading-snug">
+                    <Ticket className="w-4 h-4 shrink-0" /> LISTOS PARA COMPRAR YA MISMO
+                  </span>
                 </div>
-                <span className="text-[#C6F235] font-black text-[10px] xl:text-xs tracking-widest uppercase mt-2 bg-white/10 px-3 py-1 rounded-full">
-                  COP / BOLETA
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Contenedor de Botones */}
-            <motion.div variants={itemVariants} className="flex flex-col gap-3 w-full max-w-[220px] xl:max-w-[240px]">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onOpenPurchaseModal}
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#E60012] text-white text-xs font-bold uppercase tracking-wider px-5 py-4 rounded-full shadow-glow-button cursor-pointer"
-              >
-                <span>ELEGIR NÚMEROS</span>
-                <Sparkles className="w-4 h-4 fill-white text-white" />
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: "#f8fafc" }}
-                whileTap={{ scale: 0.95 }}
-                onClick={scrollToVehicle}
-                className="w-full inline-flex items-center justify-center gap-2 bg-white text-[#111827] text-xs font-bold uppercase tracking-wider px-5 py-4 rounded-full border-2 border-slate-200 transition-colors cursor-pointer"
-              >
-                <span>VER VEHÍCULO</span>
-                <ArrowDown className="w-4 h-4" />
-              </motion.button>
-            </motion.div>
-
-            {/* CONTADOR */}
-            <motion.div variants={itemVariants} className="bg-slate-900 rounded-3xl p-4 shadow-2xl border-2 border-slate-800 w-full max-w-[220px] xl:max-w-[240px] flex flex-col items-center gap-3">
-              <div className="flex flex-col items-center text-center px-1">
-                <span className="text-[11px] sm:text-xs text-[#C6F235] font-black tracking-widest uppercase flex items-center justify-center text-center gap-1.5 leading-snug">
-                  <Ticket className="w-4 h-4 shrink-0" /> LISTOS PARA COMPRAR YA MISMO
-                </span>
-              </div>
-              <div className="flex gap-1.5">
-                {raffleDigits.map((digit, idx) => (
-                  <div key={idx} className="w-9 h-12 sm:w-10 sm:h-14 bg-black rounded-xl border-2 border-slate-700 flex items-center justify-center overflow-hidden relative shadow-inner">
-                    <span className="text-3xl font-black text-white font-mono tabular-nums">{digit}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+                <div className="flex gap-1 lg:gap-1.5">
+                  {raffleDigits.map((digit, idx) => (
+                    <div key={idx} className="w-7 h-10 lg:w-10 lg:h-14 bg-black rounded-lg lg:rounded-xl border-2 border-slate-700 flex items-center justify-center overflow-hidden relative shadow-inner">
+                      <span className="text-xl lg:text-3xl font-black text-white font-mono tabular-nums">{digit}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
 
-          {/* COLUMNA 3 (DERECHA): FOTO LIBERADA */}
-          <motion.div
-            className="lg:col-span-4 relative flex justify-end items-start pt-8 lg:-mt-12 xl:-mt-20"
-            variants={rightColumnVariants}
-            initial="hidden"
-            whileInView="show"
-            exit="hidden"
-            viewport={{ once: false, amount: 0.1 }}
-          >
-            <div className="absolute -right-6 top-1/3 -translate-y-1/2 select-none pointer-events-none opacity-10">
-              <span className="vertical-title font-heading font-black text-8xl lg:text-[120px] text-[#E60012] tracking-tighter">
-                GOL 98
-              </span>
-            </div>
-
+          {/* COLUMNA 3 (DERECHA, solo computador): CARRUSEL DE FOTOS
+              Se estira hasta la altura de la fila. En celular este carrusel
+              lo coloca App.tsx después de la galería oscura. */}
+          {isDesktop && (
             <motion.div
-              animate={{ scale: [1, 1.1, 1], rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
-              className="blob-lime absolute w-72 sm:w-80 h-72 sm:h-80 bg-[#C6F235] -z-0 opacity-90 filter blur-[1px] top-10"
-            />
-
-            <div className="relative z-10 w-[320px] lg:w-[380px] xl:w-[480px] max-w-none aspect-[9/16] rounded-3xl overflow-hidden border-4 border-white shadow-2xl bg-slate-900 ml-auto">
-              <img
-                key={currentPhotoIndex}
-                alt="Volkswagen Gol 98 con Moño"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover transition-opacity duration-700 ease-in-out"
-                src={HERO_CAROUSEL_PHOTOS[currentPhotoIndex]}
-                onError={() => nextPhoto()}
-              />
-
-              <button onClick={(e) => { e.stopPropagation(); prevPhoto(); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-[#E60012] text-white flex items-center justify-center backdrop-blur-sm transition-colors cursor-pointer z-30 shadow-md">
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); nextPhoto(); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-[#E60012] text-white flex items-center justify-center backdrop-blur-sm transition-colors cursor-pointer z-30 shadow-md">
-                <ChevronRight className="w-6 h-6" />
-              </button>
-
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
-                {HERO_CAROUSEL_PHOTOS.slice(0, 10).map((_, idx) => (
-                  <span key={idx} className={`h-1.5 rounded-full transition-all ${currentPhotoIndex % 10 === idx ? 'w-6 bg-[#E60012]' : 'w-1.5 bg-white/60'}`} />
-                ))}
-              </div>
-
-              <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                viewport={{ once: false }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
-                whileHover={{ scale: 1.1, rotate: -10 }}
-                onClick={(e) => { e.stopPropagation(); onOpenPurchaseModal(); }}
-                className="absolute -bottom-5 -left-5 bg-[#E60012] text-white w-28 h-28 xl:w-36 xl:h-36 rounded-full flex flex-col items-center justify-center text-center p-2 shadow-2xl rotate-[-8deg] border-4 border-white cursor-pointer z-40"
-              >
-                <span className="font-heading font-black text-2xl xl:text-3xl leading-none">$5.000</span>
-                <span className="text-[10px] xl:text-xs font-bold uppercase leading-tight mt-1 tracking-wider text-red-100">¡Boleto Único!</span>
-              </motion.button>
-            </div>
-          </motion.div>
+              className="lg:col-span-4 relative flex items-stretch pt-8 lg:-mt-20 xl:-mt-[105px]"
+              variants={rightColumnVariants}
+              initial="hidden"
+              whileInView="show"
+              exit="hidden"
+              viewport={{ once: false, amount: 0.1 }}
+            >
+              <HeroPhotoCarousel onOpenPurchaseModal={onOpenPurchaseModal} />
+            </motion.div>
+          )}
 
         </div>
       </div>
