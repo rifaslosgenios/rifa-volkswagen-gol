@@ -4,7 +4,7 @@ import {
   CheckCircle2,
   Sparkles,
   CreditCard,
-  Smartphone,
+  Landmark,
   Download,
   ArrowRight,
   Upload,
@@ -99,7 +99,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const [buyerPhone, setBuyerPhone] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
   const [buyerDni, setBuyerDni] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'nequi' | 'daviplata' | 'mercadopago'>('mercadopago');
+  const [paymentMethod, setPaymentMethod] = useState<'bbva' | 'bancolombia' | 'mercadopago'>('mercadopago');
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [paymentProof, setPaymentProof] = useState<string | null>(null);
@@ -171,7 +171,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
       alert('Debes aceptar los Términos, Condiciones y la Política de Tratamiento de Datos (Habeas Data) para continuar.');
       return;
     }
-    if ((paymentMethod === 'nequi' || paymentMethod === 'daviplata') && !paymentProof) {
+    if ((paymentMethod === 'bbva' || paymentMethod === 'bancolombia') && !paymentProof) {
       alert('Por favor, carga el comprobante de pago para continuar.');
       return;
     }
@@ -261,7 +261,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
           }),
           notaryProtocol: `${NOTARY_INFO.protocol} / Acta #${Math.floor(1000 + Math.random() * 9000)}`,
           qrData: `NOTARY42:${orderNum}:${finalNumbers.join(',')}`,
-          paymentMethod: paymentMethod === 'nequi' ? 'Nequi (Verificación en 2h)' : paymentMethod === 'daviplata' ? 'Daviplata (Verificación en 2h)' : 'Mercado Pago',
+          paymentMethod: paymentMethod === 'bbva' ? 'BBVA (Verificación en 2h)' : paymentMethod === 'bancolombia' ? 'Bancolombia (Verificación en 2h)' : 'Mercado Pago',
         };
 
         setCompletedTicket(ticket);
@@ -718,7 +718,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('mercadopago')}
-                        className={`p-3 py-4 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'mercadopago'
+                        className={`p-3 py-3.5 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col justify-center ${paymentMethod === 'mercadopago'
                           ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                           }`}
@@ -729,26 +729,28 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod('nequi')}
-                        className={`p-3 py-4 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'nequi'
+                        onClick={() => setPaymentMethod('bbva')}
+                        className={`p-3 py-3 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'bbva'
                           ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                           }`}
                       >
-                        <Smartphone className="w-6 h-6 mx-auto mb-1.5 text-purple-600" />
-                        <span className="text-sm block font-bold leading-tight">Nequi</span>
+                        <Landmark className="w-6 h-6 mx-auto mb-1 text-blue-700" />
+                        <span className="text-sm block font-bold leading-tight mb-1">(Llave Bre-B)</span>
+                        <span className="text-sm block font-bold leading-tight">BBVA</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod('daviplata')}
-                        className={`p-3 py-4 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'daviplata'
+                        onClick={() => setPaymentMethod('bancolombia')}
+                        className={`p-3 py-3 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'bancolombia'
                           ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                           }`}
                       >
-                        <Smartphone className="w-6 h-6 mx-auto mb-1.5 text-red-600" />
-                        <span className="text-sm block font-bold leading-tight">Daviplata</span>
+                        <Landmark className="w-6 h-6 mx-auto mb-1 text-yellow-600" />
+                        <span className="text-sm block font-bold leading-tight mb-1">(Llave Bre-B)</span>
+                        <span className="text-sm block font-bold leading-tight">Bancolombia</span>
                       </button>
                     </div>
 
@@ -758,27 +760,29 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       </div>
                     )}
 
-                    {paymentMethod === 'nequi' && (
-                      <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-purple-900">
-                        <p className="font-bold">📲 Datos para transferencia Nequi:</p>
-                        <p>Número / Llave: <strong className="text-purple-700 text-base">300 000 0000</strong></p>
-                        <p className="text-xs text-purple-700">Haz tu transferencia y sube abajo la captura del comprobante.</p>
+                    {paymentMethod === 'bbva' && (
+                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-blue-900">
+                        <p className="font-bold">🏦 Datos para transferencia BBVA:</p>
+                        <p>Llave Bre-B: <strong className="text-blue-700 text-base">bbvanm4191</strong></p>
+                        <p>Titular: <strong className="text-blue-700">Narcy Manosalva</strong></p>
+                        <p className="text-xs text-blue-700 mt-1">Haz tu transferencia y sube abajo la captura del comprobante.</p>
                       </div>
                     )}
 
-                    {paymentMethod === 'daviplata' && (
-                      <div className="bg-red-50 border border-red-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-red-900">
-                        <p className="font-bold">📲 Datos para transferencia Daviplata:</p>
-                        <p>Número / Llave: <strong className="text-red-700 text-base">300 000 0000</strong></p>
-                        <p className="text-xs text-red-700">Haz tu transferencia y sube abajo la captura del comprobante.</p>
+                    {paymentMethod === 'bancolombia' && (
+                      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-yellow-900">
+                        <p className="font-bold">🏦 Datos para transferencia Bancolombia:</p>
+                        <p>Llave Bre-B: <strong className="text-yellow-700 text-base">@narcy419</strong></p>
+                        <p>Titular: <strong className="text-yellow-700">Narcy Manosalva</strong></p>
+                        <p className="text-xs text-yellow-700 mt-1">Haz tu transferencia y sube abajo la captura del comprobante.</p>
                       </div>
                     )}
 
-                    {(paymentMethod === 'nequi' || paymentMethod === 'daviplata') && (
+                    {(paymentMethod === 'bbva' || paymentMethod === 'bancolombia') && (
                       <div className="bg-slate-50 border-2 border-dashed border-slate-300 p-4 rounded-2xl space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-slate-700">
-                            Sube tu comprobante de {paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}: *
+                            Sube tu comprobante de {paymentMethod === 'bbva' ? 'BBVA' : 'Bancolombia'}: *
                           </span>
                           <Upload className="w-5 h-5 text-[#FF2D78]" />
                         </div>
