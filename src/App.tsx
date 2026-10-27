@@ -9,6 +9,7 @@ import { db } from './firebaseConfig';
 
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
+import { HeroV2 } from './components/HeroV2';
 import { Hero } from './components/Hero';
 import { HeroPhotoCarousel, useIsDesktop } from './components/HeroPhotoCarousel';
 import { CountdownSection } from './components/CountdownSection';
@@ -163,6 +164,15 @@ export default function App() {
         />
 
         <main>
+          <HeroV2
+            onOpenPurchaseModal={() => handleOpenPurchase()}
+            onOpenVehicleModal={() => {
+              setSelectedVehicleSpec(null);
+              setIsVehicleModalOpen(true);
+            }}
+            onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
+          />
+
           <Hero
             onOpenPurchaseModal={() => handleOpenPurchase()}
             onOpenVehicleModal={() => {
