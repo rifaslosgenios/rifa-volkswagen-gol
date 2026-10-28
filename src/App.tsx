@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { ShoppingCart, ArrowRight } from 'lucide-react'; // <-- Agregamos iconos para la recuperación
 
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
@@ -45,6 +46,9 @@ export default function App() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVehicleSpec, setSelectedVehicleSpec] = useState<VehicleSpec | null>(null);
 
+  // ESTADOS PARA RECUPERACIÓN DE CARRITO
+  const [showRecoveryAlert, setShowRecoveryAlert] = useState(false);
+
   const isDesktop = useIsDesktop();
   const modalEntryRef = useRef(false);
 
@@ -55,10 +59,24 @@ export default function App() {
     isLegalModalOpen ||
     isVehicleModalOpen;
 
-  // CORRECCIÓN: Separamos la simulación de la petición a Firebase
+  // DETECTOR DE CARRITO ABANDONADO AL INICIAR LA APP
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const savedCheckout = localStorage.getItem('pending_checkout');
+      if (savedCheckout) {
+        try {
+          const parsed = JSON.parse(savedCheckout);
+          if (parsed && parsed.numbers && parsed.numbers.length > 0) {
+            setShowRecoveryAlert(true);
+          }
+        } catch (e) { }
+      }
+    }, 800); // Un pequeño retraso para que la página cargue primero
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const fetchRealSalesCount = async () => {
-      // 1. Calculamos la simulación de marketing PRIMERO (Siempre funciona)
       const startDate = new Date('2026-10-25').getTime();
       const now = Date.now();
       const daysPassed = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
@@ -69,7 +87,6 @@ export default function App() {
       const simulatedCount = Math.floor(baseFakeCount + (daysPassed * dailyFakeSales));
       let realCount = 0;
 
-      // 2. Intentamos buscar el dato real en Firebase
       try {
         const coll = collection(db, 'tickets');
         const q = query(coll, where('status', 'in', ['paid', 'reserved']));
@@ -79,7 +96,6 @@ export default function App() {
         console.log("Esperando conexión o datos en Firebase...");
       }
 
-      // 3. Comparamos y pasamos el número mayor a los componentes
       const displayCount = Math.max(simulatedCount, realCount);
 
       setRealSoldTotal(displayCount);
@@ -137,6 +153,8 @@ export default function App() {
   const handlePurchaseComplete = (ticket: PurchasedTicket) => {
     setPurchasedTickets((prev) => [ticket, ...prev]);
     setRealSoldTotal(prev => Math.max(prev + ticket.numbers.length, prev));
+    // Limpiamos la recuperación una vez comprado exitosamente
+    localStorage.removeItem('pending_checkout');
   };
 
   return (
@@ -190,6 +208,39 @@ export default function App() {
         onOpenLegalModal={() => setIsLegalModalOpen(true)}
         onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
       />
+
+      {/* MODAL DE RECUPERACIÓN DE CARRITO */}
+      {showRecoveryAlert && (
+        <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-[#F2B33D]/20 text-[#0B5D3B] rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <ShoppingCart className="w-8 h-8" />
+            </div>
+            <h3 className="font-heading font-black text-2xl text-[#1D2B22] mb-2">¡Recuperamos tu carrito!</h3>
+            <p className="text-slate-600 text-sm mb-6">
+              Vimos que estabas a punto de pagar tus números. ¿Deseas continuar donde te quedaste para subir tu comprobante?
+            </p>
+            <button
+              onClick={() => {
+                setShowRecoveryAlert(false);
+                setIsPurchaseModalOpen(true);
+              }}
+              className="bg-[#0B5D3B] hover:bg-[#094A2F] text-[#FFF8EC] px-6 py-3.5 rounded-xl font-bold uppercase tracking-wide w-full transition-colors shadow-md flex items-center justify-center gap-2 mb-3 cursor-pointer"
+            >
+              Continuar mi compra <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('pending_checkout');
+                setShowRecoveryAlert(false);
+              }}
+              className="text-slate-400 hover:text-[#C8102E] text-sm font-semibold underline transition-colors cursor-pointer"
+            >
+              No, empezar de nuevo
+            </button>
+          </div>
+        </div>
+      )}
 
       {isPurchaseModalOpen && (
         <PurchaseModal

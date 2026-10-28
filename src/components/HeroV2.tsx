@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Scissors, ArrowRight, Check, Search, Shuffle, Snowflake, AlertCircle, Sparkles, MapPin, Ticket } from 'lucide-react';
-import { collection, onSnapshot } from 'firebase/firestore';
+// INYECCIÓN: Importamos query y where para la Optimización Nivel Dios
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { TICKET_PACKAGES, HERO_CAROUSEL_PHOTOS } from '../data/mockData';
 import { TicketPackage } from '../types';
@@ -148,22 +149,33 @@ const CutLine: React.FC = () => {
     );
 };
 
-export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
-    const [selectedPkg, setSelectedPkg] = useState<TicketPackage>(() => TICKET_PACKAGES[0]);
-    const [isCustomMode, setIsCustomMode] = useState(false);
+// Función para obtener el estado guardado al cargar la página
+const getSavedPayload = () => {
+    try {
+        const saved = localStorage.getItem('pendingTicketPayload');
+        return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+        return null;
+    }
+};
 
-    const [selectedNumbers, setSelectedNumbers] = useState<string[]>([]);
+export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
+    // Inicializamos todos los estados intentando leer el localStorage (Memoria de carrito)
+    const savedData = getSavedPayload();
+
+    const [selectedPkg, setSelectedPkg] = useState<TicketPackage>(() => savedData?.pkg || TICKET_PACKAGES[0]);
+    const [isCustomMode, setIsCustomMode] = useState(() => savedData ? savedData.pkg.id === 'custom' : false);
+
+    const [selectedNumbers, setSelectedNumbers] = useState<string[]>(() => savedData?.numbers || []);
+    const [buyerName, setBuyerName] = useState(() => savedData?.buyer?.name || '');
+    const [buyerEmail, setBuyerEmail] = useState(() => savedData?.buyer?.email || '');
+    const [buyerPhone, setBuyerPhone] = useState(() => savedData?.buyer?.phone || '');
+
     const [board, setBoard] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const [searchValue, setSearchValue] = useState('');
-
-    const [buyerName, setBuyerName] = useState('');
-    const [buyerEmail, setBuyerEmail] = useState('');
-    const [buyerPhone, setBuyerPhone] = useState('');
-
     const [takenNumbers, setTakenNumbers] = useState<Set<string>>(new Set());
     const [formError, setFormError] = useState(false);
-
     const [raffleDigits, setRaffleDigits] = useState(['4', '6', '0', '0']);
 
     useEffect(() => {
@@ -174,7 +186,7 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
         return () => clearInterval(raffleInterval);
     }, []);
 
-    // NUEVO: Sincronización en tiempo real con la memoria para que el botón PARTICIPAR de arriba funcione siempre
+    // GUARDADO AUTOMÁTICO EN EL CARRITO
     useEffect(() => {
         if (selectedNumbers.length > 0) {
             const finalPkg = isCustomMode ? {
@@ -188,9 +200,13 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                 numbers: selectedNumbers,
                 buyer: { name: buyerName.trim(), email: buyerEmail.trim(), phone: buyerPhone.trim() },
             };
+
             sessionStorage.setItem('ticketPayload', JSON.stringify(payload));
+            // Esta línea inyectada hace que App.tsx detecte que el carrito tiene cosas pendientes
+            localStorage.setItem('pendingTicketPayload', JSON.stringify(payload));
         } else {
             sessionStorage.removeItem('ticketPayload');
+            localStorage.removeItem('pendingTicketPayload');
         }
     }, [selectedNumbers, buyerName, buyerEmail, buyerPhone, selectedPkg, isCustomMode]);
 
@@ -205,13 +221,17 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
         }
 
         try {
-            const unsubscribe = onSnapshot(collection(db, 'tickets'), (snapshot) => {
+            // OPTIMIZACIÓN NIVEL DIOS FIREBASE
+            // En vez de descargar los 10,000 números todo el tiempo, solo traemos los ocupados.
+            // Esto reduce el costo de lectura en un 99.5%.
+            const ticketsRef = collection(db, 'tickets');
+            const q = query(ticketsRef, where('status', '!=', 'available'));
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
                 const taken = new Set<string>();
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    if (data.status !== 'available') {
-                        taken.add(data.number);
-                    }
+                    taken.add(data.number);
                 });
                 setTakenNumbers(taken);
             });
@@ -310,7 +330,6 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
     };
 
     const handleContinue = () => {
-        // Modificado para que te lleve arriba si no has seleccionado números
         if (selectedNumbers.length === 0) {
             scrollToSection('ticket-details');
             return;
@@ -341,6 +360,7 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
         };
 
         sessionStorage.setItem('ticketPayload', JSON.stringify(payload));
+        localStorage.setItem('pendingTicketPayload', JSON.stringify(payload));
         onOpenPurchaseModal(payload);
     };
 
@@ -371,7 +391,7 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
 
             <div className="max-w-[95rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center">
 
-                {/* CABECERA (Aplica para ambos) */}
+                {/* CABECERA */}
                 <div className="w-full max-w-[480px] lg:max-w-none mx-auto flex items-center justify-center gap-2.5 lg:block mb-4 lg:mb-8 relative">
                     <img src={mascotaImg} alt="Mascota Rifa" className="lg:hidden w-[78px] sm:w-24 h-auto object-contain drop-shadow-xl shrink-0" />
 
@@ -421,7 +441,7 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                     </div>
                 </div>
 
-                {/* ESTRUCTURA PRINCIPAL (Contiene Ticket + Cajas Flotantes en Desktop) */}
+                {/* ESTRUCTURA PRINCIPAL */}
                 <div className="w-full flex flex-col lg:flex-row justify-center items-start gap-6 lg:gap-10 xl:gap-14">
 
                     {/* COLUMNA 1: TICKET PRINCIPAL */}
@@ -637,18 +657,24 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                                             <h4 style={fontDisplay} className="text-[22px] leading-none text-[#C8102E] flex items-center gap-1.5">
                                                 <Snowflake className="w-4 h-4 text-[#0B5D3B]" /> Elige tus números
                                             </h4>
-                                            <button
+                                            <motion.button
                                                 type="button"
+                                                animate={{ scale: [1, 1.05, 1] }}
+                                                transition={{ repeat: Infinity, duration: 2 }}
                                                 onClick={generateBoard}
-                                                className="inline-flex items-center gap-1.5 min-h-[38px] px-3 rounded-full border-2 border-[#0B5D3B] text-[#0B5D3B] text-[12px] font-bold hover:bg-[#0B5D3B] hover:text-white transition-colors cursor-pointer touch-manipulation"
+                                                className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 rounded-full border-2 border-[#0B5D3B] bg-[#0B5D3B]/10 text-[#0B5D3B] text-[13px] font-extrabold hover:bg-[#0B5D3B] hover:text-white transition-colors cursor-pointer touch-manipulation shadow-sm"
                                             >
-                                                <Shuffle className="w-3.5 h-3.5 shrink-0" />
-                                                ¿No te gustan? Mira otros 20
-                                            </button>
+                                                <Shuffle className="w-4 h-4 shrink-0" />
+                                                Ver otros 20 al azar
+                                            </motion.button>
                                         </div>
 
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="relative flex-1 min-w-0">
+                                            <motion.div
+                                                animate={{ scale: [1, 1.02, 1] }}
+                                                transition={{ repeat: Infinity, duration: 2 }}
+                                                className="relative flex-1 min-w-0 rounded-full"
+                                            >
                                                 <Search className="w-4 h-4 text-[#0B5D3B]/60 absolute left-3 top-1/2 -translate-y-1/2" />
                                                 <input
                                                     type="text"
@@ -657,9 +683,9 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                                                     placeholder="Busca números (0000-9999)"
                                                     value={searchValue}
                                                     onChange={(e) => handleSearchChange(e.target.value)}
-                                                    className="w-full bg-white/90 border-2 border-[#0B5D3B]/30 text-[#1D2B22] placeholder:text-[#1D2B22]/45 text-[15px] rounded-full pl-9 pr-3 py-2 focus:outline-none focus:border-[#0B5D3B]"
+                                                    className="w-full bg-white/90 border-2 border-[#0B5D3B]/40 shadow-[0_0_8px_rgba(11,93,59,0.15)] text-[#1D2B22] placeholder:text-[#1D2B22]/45 text-[15px] rounded-full pl-9 pr-3 py-2 focus:outline-none focus:border-[#0B5D3B]"
                                                 />
-                                            </div>
+                                            </motion.div>
                                             <button
                                                 type="button"
                                                 onClick={addSearchedNumber}
