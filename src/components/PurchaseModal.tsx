@@ -1,52 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   CheckCircle2,
   Sparkles,
-  CreditCard,
-  Landmark,
   Download,
   ArrowRight,
   Upload,
   ExternalLink,
+  Info,
+  AlertCircle,
+  Scissors,
+  Snowflake,
+  Scan,
+  Maximize2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import { TICKET_PACKAGES, NOTARY_INFO } from '../data/mockData';
+import { NOTARY_INFO, TICKET_PACKAGES } from '../data/mockData';
 import { TicketPackage, PurchasedTicket } from '../types';
 
-// Importaciones oficiales de NPM (Corregidas para Vercel)
+// Importaciones para que Vite cargue las imágenes también en Vercel
+import santaImg from '../assets/santa.jpg';
+import vwLogo from '../assets/vw-logo.webp';
+// Tus códigos QR guardados en la carpeta assets con extensión .jpeg
+import qrNequi1 from '../assets/qr-nequi-1.jpeg';
+import qrNequi2 from '../assets/qr-nequi-2.jpeg';
+
 import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
 
 interface PurchaseModalProps {
-  initialPackage?: TicketPackage | null;
+  initialPackage?: any;
+  selection?: any;
   onClose: () => void;
   onPurchaseComplete: (ticket: PurchasedTicket) => void;
 }
 
-const UNIT_PRICE = 5000;
+/* ───────── DATOS DEL TIQUETE ───────── */
+const DRAW_DATE = 'Enero de 2027';
+const LOTTERY = 'Lotería de Boyacá';
+
+/* ───────── TIPOGRAFÍAS NAVIDEÑAS ───────── */
+const FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Mountains+of+Christmas:wght@700&family=Pacifico&display=swap';
+const fontScript: React.CSSProperties = { fontFamily: "'Pacifico', 'Brush Script MT', cursive" };
+const fontDisplay: React.CSSProperties = { fontFamily: "'Mountains of Christmas', 'Fredoka', cursive" };
+const fontBody: React.CSSProperties = {
+  fontFamily: "'Fredoka', ui-rounded, 'Nunito', system-ui, -apple-system, sans-serif",
+};
 
 const formatPrice = (value: number | string): string => {
   const n = Math.round(Number(value) || 0);
   return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
-const StepTitle: React.FC<{ n: number; title: string; hint?: string }> = ({ n, title, hint }) => (
-  <div className="flex items-start gap-3 mb-3">
-    <span className="shrink-0 w-8 h-8 rounded-full bg-[#111827] text-white font-heading font-black text-base flex items-center justify-center">
-      {n}
-    </span>
-    <div>
-      <h4 className="font-heading font-black text-lg sm:text-xl text-[#111827] leading-tight">{title}</h4>
-      {hint && <p className="text-sm text-slate-500 mt-0.5 leading-snug">{hint}</p>}
-    </div>
-  </div>
-);
-
-const inputClass =
-  'w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#FF2D78]';
-
-// Función para comprimir la imagen del comprobante antes de enviarla a Firebase (Ahorra espacio y costos)
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -73,7 +79,6 @@ const compressImage = (file: File): Promise<string> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        // Formato JPEG a 70% de calidad asegura pesos menores a 150KB
         resolve(canvas.toDataURL('image/jpeg', 0.7));
       };
     };
@@ -81,75 +86,148 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
+type PaymentMethodType = 'nequi' | 'daviplata' | 'bancolombia' | 'bbva' | 'pse' | 'efecty' | 'mercadopago';
+
+const PAYMENT_OPTIONS: {
+  id: PaymentMethodType;
+  name: string;
+  initial: string;
+  bg: string;
+  fg: string;
+  requiresProof: boolean;
+}[] = [
+    { id: 'nequi', name: 'Nequi', initial: 'N', bg: '#DA0081', fg: '#FFFFFF', requiresProof: true },
+    { id: 'daviplata', name: 'Daviplata', initial: 'D', bg: '#ED1C24', fg: '#FFFFFF', requiresProof: true },
+    { id: 'bancolombia', name: 'Bancolombia', initial: 'B', bg: '#FDDA24', fg: '#1D2B22', requiresProof: true },
+    { id: 'pse', name: 'PSE', initial: 'P', bg: '#0066B3', fg: '#FFFFFF', requiresProof: true },
+    { id: 'efecty', name: 'Efecty', initial: 'E', bg: '#FFD200', fg: '#1D2B22', requiresProof: true },
+    { id: 'mercadopago', name: 'Mercado Pago', initial: 'M', bg: '#009EE3', fg: '#FFFFFF', requiresProof: false }
+  ];
+
+const BARS = [2, 1, 3, 1, 1, 2, 3, 1, 2, 1, 1, 3, 2, 1, 2, 3, 1, 1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 1, 2, 3, 1, 2];
+
+const Holly: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 48 36" className={className} aria-hidden="true">
+    <path d="M24 20C20 11 12 8 3 11c3 9 11 13 21 9z" fill="#0B5D3B" stroke="#FFF8EC" strokeWidth="1.2" />
+    <path d="M24 20c4-9 12-12 21-9-3 9-11 13-21 9z" fill="#146B3A" stroke="#FFF8EC" strokeWidth="1.2" />
+    <circle cx="19.5" cy="23" r="4.2" fill="#E11D2E" stroke="#FFF8EC" strokeWidth="1" />
+    <circle cx="28.5" cy="23" r="4.2" fill="#E11D2E" stroke="#FFF8EC" strokeWidth="1" />
+    <circle cx="24" cy="28.5" r="4.2" fill="#C8102E" stroke="#FFF8EC" strokeWidth="1" />
+  </svg>
+);
+
+const TicketItem: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="min-w-0">
+    <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0B5D3B]">{label}</span>
+    <span className="block text-[15px] sm:text-base font-semibold text-[#1D2B22] leading-snug break-words">{children}</span>
+  </div>
+);
+
+const CutLine: React.FC = () => {
+  const notch = 'absolute z-20 w-6 h-6 rounded-full bg-slate-50 border border-[#E2CF9E]';
+  return (
+    <div
+      aria-hidden
+      className="relative z-10 shrink-0 h-0 md:h-auto md:w-0 border-t-2 md:border-t-0 md:border-l-2 border-dashed border-[#0B5D3B]/40"
+    >
+      <span className={`${notch} md:hidden -left-3 -top-3`} />
+      <span className={`${notch} md:hidden -right-3 -top-3`} />
+      <span className={`${notch} hidden md:block -left-3 -top-3`} />
+      <span className={`${notch} hidden md:block -left-3 -bottom-3`} />
+      <span className="absolute z-20 flex items-center gap-1 bg-[#FFF8EC] px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#0B5D3B]/70 whitespace-nowrap left-1/2 -translate-x-1/2 -top-[8px] md:top-1/2 md:left-0 md:-translate-y-1/2 md:px-0 md:py-2 md:[writing-mode:vertical-rl]">
+        <Scissors className="w-3 h-3 md:rotate-90" />
+        Cortar aquí
+      </span>
+    </div>
+  );
+};
+
 export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   initialPackage,
+  selection,
   onClose,
   onPurchaseComplete,
 }) => {
-  const [selectedPackage, setSelectedPackage] = useState<TicketPackage>(
-    initialPackage || TICKET_PACKAGES[1]
-  );
-  const [assignmentMode, setAssignmentMode] = useState<'random' | 'manual'>('random');
-  const [manualNumbers, setManualNumbers] = useState<string[]>([]);
-  const [currentManualInput, setCurrentManualInput] = useState('');
-  const [manualInputError, setManualInputError] = useState('');
-  const [previewRandomNumbers, setPreviewRandomNumbers] = useState<string[]>([]);
+  let incomingData = selection || initialPackage;
 
-  const [buyerName, setBuyerName] = useState('');
-  const [buyerPhone, setBuyerPhone] = useState('');
-  const [buyerEmail, setBuyerEmail] = useState('');
-  const [buyerDni, setBuyerDni] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'bbva' | 'bancolombia' | 'mercadopago'>('mercadopago');
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  if (!incomingData || !incomingData.numbers) {
+    const stored = sessionStorage.getItem('ticketPayload');
+    if (stored) {
+      try {
+        incomingData = JSON.parse(stored);
+      } catch (e) { }
+    }
+  }
 
+  const handleCloseModal = () => {
+    sessionStorage.removeItem('ticketPayload');
+    onClose();
+  };
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('nequi');
   const [paymentProof, setPaymentProof] = useState<string | null>(null);
   const [proofFileName, setProofFileName] = useState('');
+  const [proofError, setProofError] = useState(false);
+
+  // Estado para controlar qué imagen de QR está ampliada
+  const [expandedQR, setExpandedQR] = useState<string | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
   const [completedTicket, setCompletedTicket] = useState<PurchasedTicket | null>(null);
 
-  const generateRandomNumbers = (count: number): string[] => {
-    const numbers = new Set<string>();
-    while (numbers.size < count) {
-      const num = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      numbers.add(num);
-    }
-    return Array.from(numbers);
-  };
+  useEffect(() => {
+    const id = 'navidad-ticket-fonts';
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = FONTS_URL;
+    document.head.appendChild(link);
+  }, []);
 
-  React.useEffect(() => {
-    setPreviewRandomNumbers(generateRandomNumbers(selectedPackage.totalNumbers));
-  }, [selectedPackage]);
+  if (!incomingData) return null;
 
-  const handleAddManualNumber = () => {
-    setManualInputError('');
-    const cleaned = currentManualInput.trim();
-    if (!/^\d{1,4}$/.test(cleaned)) {
-      setManualInputError('Escribe un número de 1 a 4 dígitos (de 0000 a 9999)');
-      return;
-    }
-    const formatted = cleaned.padStart(4, '0');
-    if (manualNumbers.includes(formatted)) {
-      setManualInputError(`El número #${formatted} ya está en tu lista`);
-      return;
-    }
-    if (manualNumbers.length >= selectedPackage.totalNumbers) {
-      setManualInputError(`Tu paquete incluye ${selectedPackage.totalNumbers} números. Ya completaste la selección.`);
-      return;
-    }
-    setManualNumbers([...manualNumbers, formatted]);
-    setCurrentManualInput('');
-  };
+  const isFullSelection = incomingData && incomingData.numbers && incomingData.buyer && incomingData.pkg;
+  const pkg: TicketPackage = isFullSelection ? incomingData.pkg : (incomingData.id ? incomingData : TICKET_PACKAGES[0]);
+  const numbers: string[] = isFullSelection ? incomingData.numbers : [];
+  const buyer = isFullSelection ? incomingData.buyer : { name: '', email: '', phone: '' };
 
-  const handleRemoveManualNumber = (num: string) => {
-    setManualNumbers(manualNumbers.filter((n) => n !== num));
-  };
+  if (numbers.length === 0 || !buyer.name) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm text-center shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 bg-[#F2B33D]/20 text-[#0B5D3B] rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h3 className="font-heading font-black text-2xl text-[#1D2B22] mb-2">¡Falta poco!</h3>
+          <p className="text-slate-600 text-sm mb-6">
+            Para proceder al pago, primero debes elegir tus números y colocar tus datos en el boleto de la pantalla principal.
+          </p>
+          <button
+            onClick={() => {
+              handleCloseModal();
+              document.getElementById('seccion-datos')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="bg-[#0B5D3B] hover:bg-[#094A2F] text-[#FFF8EC] px-6 py-3.5 rounded-xl font-bold uppercase tracking-wide w-full transition-colors shadow-md cursor-pointer"
+          >
+            Ir a elegir números
+          </button>
+          <button onClick={handleCloseModal} className="mt-4 text-slate-400 hover:text-slate-600 text-sm font-semibold underline cursor-pointer">
+            Cerrar esta ventana
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentOption = PAYMENT_OPTIONS.find(p => p.id === paymentMethod);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setProofFileName(file.name);
+      setProofError(false);
       try {
         const compressedBase64 = await compressImage(file);
         setPaymentProof(compressedBase64);
@@ -163,105 +241,84 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!buyerName.trim() || !buyerPhone.trim() || !buyerEmail.trim()) {
-      alert('Por favor, completa los campos requeridos (Nombre, Teléfono y Email).');
-      return;
-    }
-    if (!acceptTerms) {
-      alert('Debes aceptar los Términos, Condiciones y la Política de Tratamiento de Datos (Habeas Data) para continuar.');
-      return;
-    }
-    if ((paymentMethod === 'bbva' || paymentMethod === 'bancolombia') && !paymentProof) {
-      alert('Por favor, carga el comprobante de pago para continuar.');
-      return;
-    }
-
-    let finalNumbers: string[] = [];
-    if (assignmentMode === 'manual') {
-      if (manualNumbers.length < selectedPackage.totalNumbers) {
-        const remainingNeeded = selectedPackage.totalNumbers - manualNumbers.length;
-        const randoms = generateRandomNumbers(remainingNeeded);
-        finalNumbers = [...manualNumbers, ...randoms];
-      } else {
-        finalNumbers = [...manualNumbers];
+    if (currentOption?.requiresProof && !paymentProof) {
+      setProofError(true);
+      const uploadZone = document.getElementById('zona-comprobante');
+      if (uploadZone) {
+        uploadZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    } else {
-      finalNumbers = [...previewRandomNumbers];
+      return;
     }
 
+    setProofError(false);
     setIsProcessing(true);
-    setProcessingStep('Verificando disponibilidad de números...');
+    setProcessingStep('Verificando disponibilidad...');
 
     try {
-      // 1. Verificar que ninguno de los números esté ocupado
       const now = Date.now();
-      for (const num of finalNumbers) {
+
+      for (const num of numbers) {
         const ticketRef = doc(db, "tickets", num);
         const docSnap = await getDoc(ticketRef);
 
         if (docSnap.exists()) {
           const data = docSnap.data();
-          if (data.status === 'paid' || (data.status === 'reserved' && data.expiresAt > now)) {
-            alert(`Lo sentimos, el número #${num} acaba de ser reservado por alguien más. Por favor escoge otro o genera números al azar nuevos.`);
+          if (data.status === 'sold' || (data.status === 'reserved' && data.expiresAt > now)) {
+            alert(`Lo sentimos, el número #${num} acaba de ser tomado por alguien más. Por favor, cierra esta ventana y elige otro número.`);
             setIsProcessing(false);
             return;
           }
         }
       }
 
-      setProcessingStep('Registrando orden segura...');
+      setProcessingStep('Asegurando tus números...');
 
-      // 2. Crear la Orden (Datos Privados)
       const orderNum = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
       const orderRef = doc(collection(db, "orders"));
 
       await setDoc(orderRef, {
         orderNumber: orderNum,
-        buyerName,
-        buyerEmail,
-        buyerPhone,
-        buyerDni: buyerDni || 'No proporcionado',
-        packageName: selectedPackage.name,
-        totalPrice: selectedPackage.price,
-        numbers: finalNumbers,
-        status: 'pending',
+        buyerName: buyer.name,
+        buyerEmail: buyer.email,
+        buyerPhone: buyer.phone,
+        packageName: pkg.name,
+        totalPrice: pkg.price,
+        numbers: numbers,
+        status: currentOption?.requiresProof ? 'pending_verification' : 'pending_gateway',
         paymentMethod,
         receiptImageBase64: paymentProof || null,
         createdAt: now
       });
 
-      // 3. Bloquear los números (Datos Públicos) - Vencimiento 2h
-      const expiresAt = now + (2 * 60 * 60 * 1000);
-      for (const num of finalNumbers) {
+      for (const num of numbers) {
         const ticketRef = doc(db, "tickets", num);
         await setDoc(ticketRef, {
-          status: 'reserved',
+          status: 'sold',
           orderId: orderRef.id,
-          expiresAt: expiresAt
-        });
+          updatedAt: now
+        }, { merge: true });
       }
 
       setProcessingStep('Generando comprobante oficial...');
 
-      // 4. Crear el comprobante de éxito local
       setTimeout(() => {
         const ticket: PurchasedTicket = {
           id: orderRef.id,
           orderNumber: orderNum,
-          packageName: selectedPackage.name,
-          numbers: finalNumbers,
-          totalPrice: selectedPackage.price,
-          buyerName,
-          buyerEmail,
-          buyerPhone,
-          buyerDni: buyerDni || 'No proporcionado',
+          packageName: pkg.name,
+          numbers: numbers,
+          totalPrice: pkg.price,
+          buyerName: buyer.name,
+          buyerEmail: buyer.email,
+          buyerPhone: buyer.phone,
+          buyerDni: 'No proporcionado',
           purchaseDate: new Date().toLocaleDateString('es-ES', {
             day: '2-digit', month: 'long', year: 'numeric',
             hour: '2-digit', minute: '2-digit',
           }),
           notaryProtocol: `${NOTARY_INFO.protocol} / Acta #${Math.floor(1000 + Math.random() * 9000)}`,
-          qrData: `NOTARY42:${orderNum}:${finalNumbers.join(',')}`,
-          paymentMethod: paymentMethod === 'bbva' ? 'BBVA (Verificación en 2h)' : paymentMethod === 'bancolombia' ? 'Bancolombia (Verificación en 2h)' : 'Mercado Pago',
+          qrData: `NOTARY42:${orderNum}:${numbers.join(',')}`,
+          paymentMethod: currentOption?.name || 'Mercado Pago',
         };
 
         setCompletedTicket(ticket);
@@ -271,19 +328,16 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
     } catch (error) {
       console.error("Error al registrar en Firebase:", error);
-      alert("Hubo un error de conexión al guardar tu reserva. Por favor intenta de nuevo.");
+      alert("Hubo un error de conexión al guardar tu compra. Por favor intenta de nuevo.");
       setIsProcessing(false);
     }
   };
 
-  // Generador Real de PDF usando jsPDF
   const handleDownloadPDF = () => {
     if (!completedTicket) return;
 
     const doc = new jsPDF();
-
-    // Header
-    doc.setFillColor(17, 24, 39); // bg-slate-900
+    doc.setFillColor(11, 93, 59);
     doc.rect(0, 0, 210, 35, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
@@ -291,9 +345,8 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     doc.text("RIFA LOS GENIOS", 105, 18, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("COMPROBANTE OFICIAL DE RESERVA", 105, 26, { align: "center" });
+    doc.text("COMPROBANTE OFICIAL DE COMPRA", 105, 26, { align: "center" });
 
-    // Body
     doc.setTextColor(17, 24, 39);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -301,12 +354,8 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    const msg = completedTicket.paymentMethod.includes('Mercado')
-      ? 'Aquí tienes el resumen de tu reserva (Pendiente de pago exitoso):'
-      : 'Tus números están reservados por 2 horas mientras validamos tu transferencia:';
-    doc.text(msg, 20, 65);
+    doc.text('Tus números han sido asignados exitosamente:', 20, 65);
 
-    // Box details
     doc.setFillColor(248, 250, 252);
     doc.rect(20, 75, 170, 50, 'F');
 
@@ -316,9 +365,9 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     doc.text(completedTicket.orderNumber, 60, 85);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Paquete:", 25, 95);
+    doc.text("Medio de Pago:", 25, 95);
     doc.setFont("helvetica", "normal");
-    doc.text(completedTicket.packageName, 60, 95);
+    doc.text(completedTicket.paymentMethod, 60, 95);
 
     doc.setFont("helvetica", "bold");
     doc.text("Total:", 25, 105);
@@ -330,527 +379,401 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     doc.setFont("helvetica", "normal");
     doc.text(completedTicket.purchaseDate, 60, 115);
 
-    // Numbers
     doc.setFont("helvetica", "bold");
-    doc.text("TUS NÚMEROS BLOQUEADOS:", 20, 140);
+    doc.text("TUS NÚMEROS DE LA SUERTE:", 20, 140);
 
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 45, 120); // Pink color
+    doc.setTextColor(200, 16, 46);
     const numsText = completedTicket.numbers.map(n => `#${n}`).join('   ');
     const splitNums = doc.splitTextToSize(numsText, 170);
     doc.text(splitNums, 20, 150);
 
-    // Footer Legal
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text(`Certificado de Garantía / Protocolo: ${completedTicket.notaryProtocol}`, 105, 270, { align: "center" });
-    doc.text("Válido como soporte de reserva en la plataforma oficial Rifa Volkswagen Gol 98", 105, 275, { align: "center" });
 
-    doc.save(`Reserva_Genios_${completedTicket.orderNumber}.pdf`);
+    doc.save(`Tiquete_Genios_${completedTicket.orderNumber}.pdf`);
   };
 
   const isFormView = !completedTicket && !isProcessing;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-      <div
-        className={`relative bg-white rounded-3xl w-full ${isFormView ? 'max-w-5xl' : 'max-w-2xl'} max-h-[94vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100`}
-      >
-        {/* Header */}
-        <div className="shrink-0 bg-gradient-to-r from-[#111827] to-slate-900 text-white px-5 py-4 sm:px-8 sm:py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#FF2D78] flex items-center justify-center text-white shrink-0">
-              <Sparkles className="w-5 h-5 fill-white" />
-            </div>
-            <div>
-              <h3 className="font-heading font-black text-lg sm:text-2xl text-white leading-tight">
-                Compra tus boletos
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300">
-                Solo 4 pasos sencillos y listo
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
-          >
-            <X className="w-5 h-5" />
+    <>
+      {/* Modal para ampliar código QR */}
+      {expandedQR && (
+        <div className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 transition-all" onClick={() => setExpandedQR(null)}>
+          <button onClick={() => setExpandedQR(null)} className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer">
+            <X className="w-8 h-8" />
           </button>
+          <p className="text-white text-xl font-bold uppercase tracking-widest mb-6 animate-pulse text-center">
+            Escanea para pagar
+          </p>
+          <img src={expandedQR} alt="QR Ampliado" className="w-full max-w-[400px] h-auto rounded-2xl shadow-2xl border-4 border-white object-contain bg-white" onClick={(e) => e.stopPropagation()} />
+          <p className="text-white/60 text-sm mt-6 font-semibold">Toca cualquier parte para cerrar</p>
         </div>
+      )}
 
-        {/* Content Body */}
-        {completedTicket ? (
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="text-center py-4 space-y-6 animate-in fade-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-10 h-10" />
+      <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+        <div className={`relative bg-white rounded-3xl w-full ${isFormView ? 'max-w-4xl' : 'max-w-xl'} max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
+
+          {/* Encabezado */}
+          <div className="shrink-0 bg-[#1D2B22] text-[#FFF8EC] px-6 py-4 flex items-center justify-between border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#C8102E] flex items-center justify-center shrink-0 shadow-md">
+                <Sparkles className="w-5 h-5 fill-current text-white" />
               </div>
-
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-[#FF2D78]">
-                  ¡RESERVA REGISTRADA CON ÉXITO!
-                </span>
-                <h4 className="font-heading font-black text-2xl text-[#111827] mt-1">
-                  ¡Enhorabuena, {completedTicket.buyerName}!
-                </h4>
-                <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
-                  {paymentMethod === 'mercadopago'
-                    ? 'Tus números están bloqueados temporalmente. Haz clic en el botón de abajo para ir a pagar de forma segura en Mercado Pago.'
-                    : 'Tus números están reservados por 2 horas. Validaremos tu comprobante cargado para confirmarlos definitivamente.'}
-                </p>
+                <h3 className="font-heading font-black text-xl leading-none tracking-tight">Finaliza tu compra</h3>
+                <p className="text-xs text-white/70 mt-1">Sorteo de Reyes - Volkswagen Gol</p>
               </div>
+            </div>
+            <button onClick={handleCloseModal} aria-label="Cerrar" className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-              {paymentMethod === 'mercadopago' && (
-                <div className="bg-[#FFF0F5] border-2 border-[#FF2D78] p-5 rounded-3xl space-y-3 shadow-md">
-                  <p className="text-sm font-bold text-slate-800">
-                    Paso final: Realiza tu pago oficial en la plataforma segura de Mercado Pago.
+          {completedTicket ? (
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8">
+              <div className="text-center space-y-6">
+                <div className="w-20 h-20 bg-[#0B5D3B]/10 text-[#0B5D3B] rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-12 h-12" />
+                </div>
+                <div>
+                  <span className="text-xs font-black uppercase tracking-widest text-[#0B5D3B]">¡Compra Confirmada!</span>
+                  <h4 className="font-heading font-black text-2xl text-[#1D2B22] mt-2">¡Mucha suerte, {completedTicket.buyerName.split(' ')[0]}!</h4>
+                  <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
+                    {currentOption?.requiresProof
+                      ? 'Hemos bloqueado tus números exitosamente y validaremos tu comprobante a la brevedad.'
+                      : 'Tus números están guardados. Finaliza el pago en la pasarela para asegurar tu participación.'}
                   </p>
-                  <a
-                    href="https://link.mercadopago.com.co/rifaslosgenios"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-3 bg-[#FF2D78] hover:bg-[#E01A63] text-white font-heading font-black text-sm uppercase tracking-wider py-4 px-6 rounded-2xl shadow-lg transition-all transform hover:scale-[1.02] cursor-pointer"
-                  >
-                    <span>PAGAR AHORA EN MERCADO PAGO</span>
+                </div>
+
+                {paymentMethod === 'mercadopago' && (
+                  <a href="https://link.mercadopago.com.co/rifaslosgenios" target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-3 bg-[#009EE3] hover:bg-[#008ACA] text-white font-black text-sm uppercase tracking-wider py-4 px-6 rounded-2xl shadow-lg transition-transform transform hover:scale-[1.02] cursor-pointer">
+                    <span>PAGAR EN MERCADO PAGO</span>
                     <ExternalLink className="w-5 h-5" />
                   </a>
-                </div>
-              )}
+                )}
 
-              {/* Pass Card */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-3xl p-6 text-left relative overflow-hidden shadow-inner">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                      Certificado de Participación
-                    </span>
-                    <span className="font-heading font-bold text-sm text-[#111827]">
-                      {completedTicket.notaryProtocol}
-                    </span>
-                  </div>
-                  <div className="bg-[#C6F235] px-2.5 py-1 rounded-full text-[10px] font-black text-[#111827]">
-                    SEGURO Y VERIFICADO
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <span className="text-xs font-bold text-slate-500 block mb-2 uppercase">
-                    Tus Números Bloqueados:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {completedTicket.numbers.map((num) => (
-                      <span
-                        key={num}
-                        className="px-3 py-1.5 bg-[#FF2D78] text-white font-heading font-black text-base rounded-xl shadow-sm tracking-wider"
-                      >
-                        #{num}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 justify-center">
-                <button
-                  onClick={handleDownloadPDF}
-                  className="inline-flex items-center gap-2 bg-[#111827] hover:bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar Comprobante PDF
-                </button>
-                <button
-                  onClick={onClose}
-                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold px-5 py-3 rounded-full transition-all cursor-pointer"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : isProcessing ? (
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="py-16 text-center space-y-4">
-              <div className="relative w-20 h-20 mx-auto">
-                <div className="absolute inset-0 rounded-full border-4 border-slate-200"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-[#FF2D78] border-t-transparent animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center text-[#FF2D78]">
-                  <Sparkles className="w-8 h-8 animate-pulse" />
-                </div>
-              </div>
-              <h4 className="font-heading font-black text-xl text-[#111827]">
-                Sincronizando con Firebase...
-              </h4>
-              <p className="text-sm text-slate-500 font-medium animate-pulse">
-                {processingStep}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handlePayment} className="flex flex-col flex-1 min-h-0">
-            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
-
-                {/* ===== COLUMNA IZQUIERDA: boletos y números ===== */}
-                <div className="space-y-7">
-                  {/* PASO 1 */}
-                  <div>
-                    <StepTitle n={1} title="¿Cuántos boletos quieres?" hint="Toca el paquete que prefieras" />
-                    <div className="space-y-3">
-                      {TICKET_PACKAGES.map((pkg) => {
-                        const isSelected = selectedPackage.id === pkg.id;
-                        const freeTickets = Math.max(0, pkg.totalNumbers - Math.round(Number(pkg.price) / UNIT_PRICE));
-                        return (
-                          <button
-                            type="button"
-                            key={pkg.id}
-                            onClick={() => {
-                              setSelectedPackage(pkg);
-                              setManualNumbers([]);
-                            }}
-                            className={`relative w-full text-left flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${isSelected
-                              ? 'border-[#FF2D78] bg-[#FFF0F5] shadow-sm'
-                              : 'border-slate-200 bg-white hover:border-slate-300'
-                              }`}
-                          >
-                            {pkg.isPopular && (
-                              <span className="absolute -top-2.5 right-4 bg-[#FF2D78] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                                TOP VENTAS
-                              </span>
-                            )}
-                            <span
-                              className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#FF2D78] bg-[#FF2D78]' : 'border-slate-300 bg-white'
-                                }`}
-                            >
-                              {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-white" />}
-                            </span>
-                            <span className="flex-1">
-                              <span className="font-heading font-bold text-base text-slate-900 block leading-tight">
-                                {pkg.name}
-                              </span>
-                              <span className="text-sm text-slate-600 block mt-0.5">
-                                {pkg.totalNumbers} {pkg.totalNumbers === 1 ? 'número' : 'números'} para el sorteo
-                              </span>
-                              {freeTickets > 0 && (
-                                <span className="inline-block mt-1 text-xs font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                                  🎁 ¡{freeTickets} {freeTickets === 1 ? 'boleto gratis' : 'boletos gratis'}!
-                                </span>
-                              )}
-                            </span>
-                            <span className="font-heading font-black text-xl text-[#FF2D78] shrink-0">
-                              {formatPrice(pkg.price)}
-                            </span>
-                          </button>
-                        );
-                      })}
+                <div className="bg-[#FFF8EC] border-2 border-dashed border-[#F2B33D] rounded-2xl p-5 text-left relative">
+                  <div className="mb-3">
+                    <span className="text-[11px] font-bold text-[#C8102E] uppercase tracking-wider block mb-1">Tus números oficiales:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {completedTicket.numbers.map((num) => (
+                        <span key={num} className="px-2.5 py-1 bg-[#1D2B22] text-[#F2B33D] font-black text-sm rounded shadow-sm">#{num}</span>
+                      ))}
                     </div>
                   </div>
+                </div>
 
-                  {/* PASO 2 */}
-                  <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
-                    <StepTitle
-                      n={2}
-                      title="Tus números de la suerte"
-                      hint="Del 0000 al 9999. Escoge cómo los quieres"
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button onClick={handleDownloadPDF} className="inline-flex justify-center items-center gap-2 bg-[#C8102E] hover:bg-[#9E0B22] text-white text-sm font-bold px-6 py-3.5 rounded-full transition-all cursor-pointer shadow-md">
+                    <Download className="w-4 h-4" /> Descargar Tiquete
+                  </button>
+                  <button onClick={handleCloseModal} className="inline-flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold px-6 py-3.5 rounded-full transition-all cursor-pointer">
+                    Volver al inicio
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : isProcessing ? (
+            <div className="flex-1 overflow-y-auto p-12 flex flex-col items-center justify-center space-y-5">
+              <div className="relative w-24 h-24">
+                <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+                <div className="absolute inset-0 rounded-full border-4 border-[#0B5D3B] border-t-transparent animate-spin"></div>
+                <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-[#F2B33D] animate-pulse" />
+              </div>
+              <div className="text-center">
+                <h4 className="font-heading font-black text-xl text-[#1D2B22]">Procesando compra...</h4>
+                <p className="text-sm text-slate-500 font-medium mt-1">{processingStep}</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handlePayment} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 space-y-6">
+
+                {/* ════════ TIQUETE NAVIDEÑO ════════ */}
+                <div
+                  className="relative bg-[#FFF8EC] rounded-2xl border border-[#E2CF9E] shadow-[0_14px_34px_rgba(11,61,42,0.2)] overflow-clip"
+                  style={fontBody}
+                >
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(#0B5D3B 1px, transparent 1px)', backgroundSize: '14px 14px', opacity: 0.06 }}
+                  />
+
+                  <div className="relative z-10 overflow-hidden bg-gradient-to-b from-[#C8102E] to-[#9E0B22] px-3 py-2 sm:py-3 text-center">
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ backgroundImage: 'radial-gradient(#ffffff 1.4px, transparent 1.4px)', backgroundSize: '22px 22px', opacity: 0.22 }}
                     />
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssignmentMode('random');
-                          setManualNumbers([]);
-                        }}
-                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${assignmentMode === 'random'
-                          ? 'bg-[#111827] text-white shadow-sm'
-                          : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-100'
-                          }`}
-                      >
-                        🎲 Al azar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAssignmentMode('manual')}
-                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${assignmentMode === 'manual'
-                          ? 'bg-[#111827] text-white shadow-sm'
-                          : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-100'
-                          }`}
-                      >
-                        ✨ Yo los elijo
-                      </button>
+                    <Holly className="absolute left-1 top-1/2 -translate-y-1/2 w-8 sm:w-11" />
+                    <Holly className="absolute right-1 top-1/2 -translate-y-1/2 w-8 sm:w-11 -scale-x-100" />
+                    <Snowflake className="hidden sm:block absolute left-14 top-2 w-4 h-4 text-white/70" />
+                    <Snowflake className="hidden sm:block absolute right-14 bottom-2 w-4 h-4 text-white/70" />
+                    <h4
+                      style={fontScript}
+                      className="relative text-[28px] sm:text-[38px] leading-[1.3] text-[#FFE9A8] drop-shadow-[0_2px_0_rgba(0,0,0,0.28)]"
+                    >
+                      Sorteo de Reyes
+                    </h4>
+                  </div>
+                  <div className="relative z-10 h-1.5 bg-gradient-to-r from-[#F2B33D] via-[#FFE08A] to-[#F2B33D]" />
+
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-stretch">
+                    <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-3">
+                      <div className="grid grid-cols-[38%_1fr] sm:grid-cols-[170px_1fr] gap-3 sm:gap-5 items-center">
+                        <div className="-rotate-2">
+                          <div className="relative aspect-square rounded-md overflow-hidden border-[3px] border-white shadow-md bg-[#C8102E]">
+                            <img
+                              src={santaImg}
+                              alt="Papá Noel"
+                              className="absolute inset-0 w-full h-full object-cover"
+                              style={{ objectPosition: '50% 30%' }}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2 min-w-0">
+                          <TicketItem label="Comprador">{buyer.name}</TicketItem>
+                          <TicketItem label="Celular">{buyer.phone}</TicketItem>
+                          <TicketItem label="Fecha del sorteo">{DRAW_DATE}</TicketItem>
+                          <TicketItem label="Juega con la">{LOTTERY}</TicketItem>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 border-t-2 border-dashed border-[#0B5D3B]/30 pt-3">
+                        <span className="inline-flex items-center gap-1.5 bg-[#F2B33D] text-[#3A2A00] text-[13px] font-bold px-3 py-1 rounded-full">
+                          Premio: Un Volkswagen Gol
+                          <img src={vwLogo} alt="" className="w-4 h-4 object-contain" />
+                        </span>
+                        <span className="border-2 border-[#0B5D3B]/60 text-[#0B5D3B] text-[13px] font-semibold px-3 py-0.5 rounded-full">
+                          {numbers.length} {numbers.length === 1 ? 'número' : 'números'}
+                        </span>
+                      </div>
                     </div>
 
-                    {assignmentMode === 'random' ? (
-                      <div>
-                        <p className="text-sm text-slate-600 mb-3 font-medium">
-                          Nosotros te damos {selectedPackage.totalNumbers} {selectedPackage.totalNumbers === 1 ? 'número' : 'números'} al azar:
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {previewRandomNumbers.map((num) => (
-                            <span
-                              key={num}
-                              className="px-3.5 py-2 bg-[#111827] text-white font-heading font-black text-base rounded-xl tracking-wider"
-                            >
-                              #{num}
-                            </span>
+                    <CutLine />
+
+                    {/* NUEVA ZONA: Talón de control con el texto ajustado */}
+                    <div className="w-full md:w-[38%] md:min-w-[240px] bg-white/55 p-4 sm:p-5 flex flex-col">
+                      <div className="flex items-end justify-between border-b-[3px] border-[#0B5D3B] pb-2 mb-3">
+                        <h5 style={fontDisplay} className="text-[22px] leading-[1.1] text-[#0B5D3B] max-w-[150px]">
+                          Estos números te darán la suerte
+                        </h5>
+                        <div className="text-right">
+                          <span className="block text-[18px] font-black text-[#C8102E] uppercase tracking-wider leading-none mt-0.5 animate-pulse">
+                            ¡Suerte<br />Ganador!
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0B5D3B] mb-1.5">
+                        Tus números
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {numbers.map((n) => (
+                          <span
+                            key={n}
+                            className="bg-[#0B5D3B] text-[#FFE08A] text-[14px] font-semibold px-2 py-1 rounded-md"
+                          >
+                            {n}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-auto pt-4 grid grid-cols-[1fr_auto] items-end gap-3">
+                        <div>
+                          <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#0B5D3B]">Total a pagar</span>
+                          <span className="block text-[30px] font-bold text-[#1D2B22] leading-none mt-0.5">
+                            {formatPrice(pkg.price)}
+                          </span>
+                        </div>
+                        <div className="flex items-stretch h-9 gap-[2px] opacity-80" aria-hidden>
+                          {BARS.map((w, i) => (
+                            <span key={i} className="bg-[#1D2B22]" style={{ width: w * 1.2 }} />
                           ))}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewRandomNumbers(generateRandomNumbers(selectedPackage.totalNumbers))}
-                          className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#FF2D78] bg-white border-2 border-[#FF2D78] hover:bg-[#FFF0F5] px-4 py-2 rounded-full cursor-pointer"
-                        >
-                          🔄 Cambiar mis números
-                        </button>
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <p className="text-sm text-slate-600 font-medium">
-                          Escribe hasta {selectedPackage.totalNumbers} {selectedPackage.totalNumbers === 1 ? 'número' : 'números'} y toca “Añadir”. Si eliges menos, completamos el resto al azar.
-                        </p>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={4}
-                            placeholder="0000"
-                            value={currentManualInput}
-                            onChange={(e) => setCurrentManualInput(e.target.value.replace(/\D/g, ''))}
-                            className="w-32 px-3 py-3 bg-white border-2 border-slate-300 rounded-xl font-heading font-black text-center text-2xl focus:outline-none focus:border-[#FF2D78]"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddManualNumber}
-                            className="px-6 py-3 bg-[#FF2D78] hover:bg-[#E01A63] text-white text-sm font-bold uppercase rounded-xl transition-colors cursor-pointer"
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selección de Medios de Pago */}
+                <div>
+                  <h4 className="font-heading font-black text-base text-[#1D2B22] mb-1">Elige tu medio de pago</h4>
+                  <p className="text-xs text-slate-500 mb-3">Selecciona el método que prefieras para realizar tu aporte.</p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {PAYMENT_OPTIONS.map((option) => {
+                      const isSelected = paymentMethod === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => {
+                            setPaymentMethod(option.id);
+                            setProofError(false);
+                            // Lógica de Scroll Automático
+                            if (option.id === 'nequi') {
+                              setTimeout(() => {
+                                document.getElementById('zona-comprobante')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }, 150);
+                            }
+                          }}
+                          className={`relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl border-2 transition-all cursor-pointer bg-white ${isSelected
+                            ? 'border-[#0B5D3B] ring-2 ring-[#0B5D3B]/20 shadow-md transform scale-[1.01]'
+                            : 'border-slate-200 hover:border-[#0B5D3B]/40 hover:shadow-xs'
+                            }`}
+                        >
+                          {isSelected && <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#0B5D3B]" />}
+                          <span
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm transition-opacity ${isSelected ? 'opacity-100' : 'opacity-70'}`}
+                            style={{ backgroundColor: option.bg, color: option.fg }}
+                            aria-hidden
                           >
-                            Añadir
-                          </button>
-                        </div>
+                            {option.initial}
+                          </span>
+                          <span className={`text-xs font-bold ${isSelected ? 'text-[#0B5D3B]' : 'text-slate-600'}`}>{option.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                        {manualInputError && (
-                          <p className="text-sm text-red-600 font-semibold">{manualInputError}</p>
-                        )}
+                {/* Instrucciones y Carga de Comprobante / Pasarela */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  {paymentMethod === 'mercadopago' ? (
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-[#009EE3] shrink-0 mt-0.5" />
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        Al hacer clic en Confirmar, tus números quedarán asegurados y te redirigiremos a la pasarela segura de <strong className="text-slate-900">Mercado Pago</strong>. No necesitas subir comprobante.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4" id="zona-comprobante">
+                      <div className="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-100">
+                        <p className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Datos para transferencia a {currentOption?.name}:</p>
 
-                        {manualNumbers.length > 0 && (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {manualNumbers.map((num) => (
-                              <span
-                                key={num}
-                                className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#111827] text-white text-base font-heading font-black rounded-xl"
-                              >
-                                #{num}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveManualNumber(num)}
-                                  aria-label={`Quitar el número ${num}`}
-                                  className="text-slate-300 hover:text-white text-lg leading-none cursor-pointer"
-                                >
-                                  ×
-                                </button>
+                        {/* ──────────────── CÓDIGOS QR EXCLUSIVOS PARA NEQUI ──────────────── */}
+                        {paymentMethod === 'nequi' && (
+                          <div className="flex flex-col items-center justify-center my-6">
+
+                            {/* Texto rojo palpitante con flecha */}
+                            <div className="flex flex-col items-center gap-1 mb-4 animate-bounce">
+                              <span className="text-sm font-black text-[#C8102E] uppercase tracking-widest px-4 py-1.5 bg-[#C8102E]/10 rounded-full">
+                                ¡Escanea aquí para pagar!
                               </span>
-                            ))}
+                              <ArrowRight className="w-5 h-5 text-[#C8102E] rotate-90" />
+                            </div>
+
+                            <div className="flex flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-[400px]">
+
+                              {/* QR 1 (Tocable con indicador visual permanente) */}
+                              <div
+                                onClick={() => setExpandedQR(qrNequi1)}
+                                className="group relative cursor-pointer active:scale-95 transition-transform"
+                                title="Ampliar código QR"
+                              >
+                                <img src={qrNequi1} alt="QR Nequi Principal" className="w-32 h-32 sm:w-40 sm:h-40 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
+
+                                {/* Icono fijo permanente para móviles */}
+                                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
+                                  <Maximize2 className="w-4 h-4 text-white" />
+                                </div>
+
+                                {/* Overlay oscuro para computadores (hover) */}
+                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
+                                  <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
+                                </div>
+                              </div>
+
+                              {/* QR 2 (Tocable con indicador visual permanente) */}
+                              <div
+                                onClick={() => setExpandedQR(qrNequi2)}
+                                className="group relative cursor-pointer active:scale-95 transition-transform"
+                                title="Ampliar código QR"
+                              >
+                                <img src={qrNequi2} alt="QR Nequi Secundario" className="w-32 h-32 sm:w-40 sm:h-40 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
+
+                                {/* Icono fijo permanente para móviles */}
+                                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
+                                  <Maximize2 className="w-4 h-4 text-white" />
+                                </div>
+
+                                {/* Overlay oscuro para computadores (hover) */}
+                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
+                                  <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
+                                </div>
+                              </div>
+
+                            </div>
+                            <p className="text-slate-400 text-[10px] font-bold mt-4 uppercase">Toca cualquier código para ampliarlo</p>
                           </div>
                         )}
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* ===== COLUMNA DERECHA: datos y pago ===== */}
-                <div className="space-y-7">
-                  {/* PASO 3 */}
-                  <div>
-                    <StepTitle n={3} title="Tus datos" hint="Para avisarte si resultas ganador" />
-                    <div className="space-y-4">
+                        <ul className="text-sm space-y-1 text-slate-600">
+                          <li><span className="font-semibold text-slate-900">Tipo de cuenta:</span> Ahorros / Llave Bre-B</li>
+                          {/* Se omitió el número para NEQUI para que la persona tenga que escanear */}
+                          {paymentMethod === 'bancolombia' ? (
+                            <li><span className="font-semibold text-slate-900">Número:</span> @narcy419</li>
+                          ) : paymentMethod === 'bbva' ? (
+                            <li><span className="font-semibold text-slate-900">Número:</span> bbvanm4191</li>
+                          ) : null}
+                          <li><span className="font-semibold text-slate-900">Titular:</span> Narcy Manosalva</li>
+                        </ul>
+                      </div>
+
                       <div>
-                        <label htmlFor="buyer-name" className="block text-sm font-bold text-slate-700 mb-1.5">
-                          Nombre y apellidos *
+                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                          Sube la captura de tu transferencia <span className="text-[#C8102E]">*</span>
                         </label>
-                        <input
-                          id="buyer-name"
-                          type="text"
-                          required
-                          autoComplete="name"
-                          placeholder="Ej: Juan Pérez"
-                          value={buyerName}
-                          onChange={(e) => setBuyerName(e.target.value)}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="buyer-phone" className="block text-sm font-bold text-slate-700 mb-1.5">
-                          Celular (WhatsApp) *
-                        </label>
-                        <input
-                          id="buyer-phone"
-                          type="tel"
-                          required
-                          autoComplete="tel"
-                          placeholder="300 000 0000"
-                          value={buyerPhone}
-                          onChange={(e) => setBuyerPhone(e.target.value)}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="buyer-email" className="block text-sm font-bold text-slate-700 mb-1.5">
-                          Correo electrónico *
-                        </label>
-                        <input
-                          id="buyer-email"
-                          type="email"
-                          required
-                          autoComplete="email"
-                          placeholder="tucorreo@ejemplo.com"
-                          value={buyerEmail}
-                          onChange={(e) => setBuyerEmail(e.target.value)}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* PASO 4 */}
-                  <div>
-                    <StepTitle n={4} title="¿Cómo vas a pagar?" hint="Toca una opción" />
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('mercadopago')}
-                        className={`p-3 py-3.5 rounded-2xl border-2 text-center transition-all cursor-pointer flex flex-col justify-center ${paymentMethod === 'mercadopago'
-                          ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
-                      >
-                        <CreditCard className="w-6 h-6 mx-auto mb-1.5 text-[#111827]" />
-                        <span className="text-sm block font-bold leading-tight">Mercado Pago</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('bbva')}
-                        className={`p-3 py-3 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'bbva'
-                          ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
-                      >
-                        <Landmark className="w-6 h-6 mx-auto mb-1 text-blue-700" />
-                        <span className="text-sm block font-bold leading-tight mb-1">(Llave Bre-B)</span>
-                        <span className="text-sm block font-bold leading-tight">BBVA</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('bancolombia')}
-                        className={`p-3 py-3 rounded-2xl border-2 text-center transition-all cursor-pointer ${paymentMethod === 'bancolombia'
-                          ? 'border-[#FF2D78] bg-[#FFF0F5] text-[#FF2D78]'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
-                      >
-                        <Landmark className="w-6 h-6 mx-auto mb-1 text-yellow-600" />
-                        <span className="text-sm block font-bold leading-tight mb-1">(Llave Bre-B)</span>
-                        <span className="text-sm block font-bold leading-tight">Bancolombia</span>
-                      </button>
-                    </div>
-
-                    {paymentMethod === 'mercadopago' && (
-                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-700">
-                        💳 Al terminar, te llevamos a la página segura de Mercado Pago para que pagues.
-                      </div>
-                    )}
-
-                    {paymentMethod === 'bbva' && (
-                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-blue-900">
-                        <p className="font-bold">🏦 Datos para transferencia BBVA:</p>
-                        <p>Llave Bre-B: <strong className="text-blue-700 text-base">bbvanm4191</strong></p>
-                        <p>Titular: <strong className="text-blue-700">Narcy Manosalva</strong></p>
-                        <p className="text-xs text-blue-700 mt-1">Haz tu transferencia y sube abajo la captura del comprobante.</p>
-                      </div>
-                    )}
-
-                    {paymentMethod === 'bancolombia' && (
-                      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-2xl mb-3 space-y-1 text-sm text-yellow-900">
-                        <p className="font-bold">🏦 Datos para transferencia Bancolombia:</p>
-                        <p>Llave Bre-B: <strong className="text-yellow-700 text-base">@narcy419</strong></p>
-                        <p>Titular: <strong className="text-yellow-700">Narcy Manosalva</strong></p>
-                        <p className="text-xs text-yellow-700 mt-1">Haz tu transferencia y sube abajo la captura del comprobante.</p>
-                      </div>
-                    )}
-
-                    {(paymentMethod === 'bbva' || paymentMethod === 'bancolombia') && (
-                      <div className="bg-slate-50 border-2 border-dashed border-slate-300 p-4 rounded-2xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-slate-700">
-                            Sube tu comprobante de {paymentMethod === 'bbva' ? 'BBVA' : 'Bancolombia'}: *
-                          </span>
-                          <Upload className="w-5 h-5 text-[#FF2D78]" />
+                        <div className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-colors ${proofError ? 'border-[#C8102E] bg-[#C8102E]/5 animate-pulse' : 'border-slate-300 hover:bg-slate-50'}`}>
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={handleFileChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div className="flex flex-col items-center gap-1.5 pointer-events-none">
+                            <Upload className={`w-6 h-6 ${proofError ? 'text-[#C8102E]' : 'text-[#0B5D3B]'}`} />
+                            <span className={`text-xs font-bold ${proofError ? 'text-[#C8102E]' : 'text-slate-700'}`}>
+                              {proofFileName ? <span className="text-[#0B5D3B]">✓ {proofFileName} cargado correctamente</span> : 'Toca aquí para subir tu comprobante de pago'}
+                            </span>
+                          </div>
                         </div>
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          required
-                          onChange={handleFileChange}
-                          className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-[#111827] file:text-white hover:file:bg-slate-800 cursor-pointer"
-                        />
-                        {proofFileName && (
-                          <p className="text-sm text-emerald-600 font-semibold">
-                            ✓ Archivo adjunto: {proofFileName}
+
+                        {proofError && (
+                          <p className="mt-2 text-xs font-bold text-[#C8102E] flex items-center gap-1 animate-pulse">
+                            <AlertCircle className="w-4 h-4" /> No has cargado el comprobante de tu pago. Por favor, sube la captura para continuar.
                           </p>
                         )}
-                        <p className="text-xs text-slate-500">
-                          Tus números quedan reservados por 2 horas mientras revisamos el comprobante.
-                        </p>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Términos y Habeas Data */}
-                  <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      checked={acceptTerms}
-                      onChange={(e) => setAcceptTerms(e.target.checked)}
-                      required
-                      className="mt-0.5 w-6 h-6 shrink-0 text-[#FF2D78] rounded border-slate-300 focus:ring-[#FF2D78] cursor-pointer"
-                    />
-                    <label htmlFor="terms" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
-                      Acepto los <span className="font-bold text-slate-900">Términos y Condiciones</span> y autorizo el <span className="font-bold text-slate-900">Tratamiento de Datos Personales (Habeas Data)</span> para validar mi participación en el sorteo. *
-                    </label>
-                  </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
-            </div>
 
-            {/* Barra fija abajo */}
-            <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between gap-3 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
-              <div>
-                <span className="text-xs sm:text-sm text-slate-500 block leading-none">Total a pagar</span>
-                <span className="font-heading font-black text-2xl sm:text-3xl text-[#111827] leading-tight">
-                  {formatPrice(selectedPackage.price)}
-                </span>
+              {/* Barra Inferior del Modal */}
+              <div className="shrink-0 bg-white border-t border-slate-200 px-5 py-3.5 sm:px-6 flex items-center justify-between gap-4">
+                <div>
+                  <span className="block text-[10px] uppercase text-slate-400 font-bold">Total a cancelar</span>
+                  <span className="block text-xl font-black text-[#1D2B22] leading-none">{formatPrice(pkg.price)}</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="flex items-center justify-center gap-2 bg-[#F2B33D] hover:bg-[#E5A423] text-[#0B3D2A] px-6 sm:px-8 py-3 rounded-xl font-black text-sm uppercase tracking-wide transition-all shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <span>Confirmar Compra</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
-
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="inline-flex items-center justify-center gap-2 bg-[#C6F235] hover:bg-[#B5E01F] text-[#111827] font-heading font-black text-sm sm:text-base uppercase tracking-wide px-5 sm:px-10 py-4 rounded-full shadow-lg transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <span>Procesando...</span>
-                ) : (
-                  <>
-                    <span>CONFIRMAR Y RESERVAR</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };

@@ -93,6 +93,19 @@ export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ on
         return { x: '0%', scale: 0.5, zIndex: 10, opacity: 0 };
     };
 
+    // Función para deslizar suavemente hacia la sección de compra de boletos
+    const scrollToTickets = () => {
+        const section = document.getElementById('seccion-tus-numeros');
+        if (section) {
+            // El block: 'center' ayuda a que el recuadro quede a buena altura en móviles
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            // Respaldo por si el ID de móvil no está visible, busca el título del componente
+            const altSection = document.getElementById('seccion-datos');
+            if (altSection) altSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         /* scroll-mt-24: al llegar con "Ver vehículo", la página se detiene un poco antes
            para que el menú fijo no tape el título de la sección.
@@ -127,7 +140,6 @@ export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ on
                             rotate: { repeat: Infinity, duration: 2.5, ease: "easeInOut" },
                             y: { repeat: Infinity, duration: 3, ease: "easeInOut" }
                         }}
-                        /* Distancia reducida: left-[-130px] */
                         className="absolute top-16 left-[-130px] xl:left-[-150px] bg-white px-5 py-4 rounded-3xl shadow-2xl border-3 border-slate-100 max-w-[190px] z-30 pointer-events-auto"
                     >
                         <div className="absolute -right-2 top-6 w-4 h-4 bg-white border-t-3 border-r-3 border-slate-100 transform rotate-45"></div>
@@ -145,11 +157,11 @@ export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ on
                         GALERÍA EXCLUSIVA
                     </span>
                     <h2 className="font-heading font-extrabold text-xl sm:text-2xl lg:text-3xl text-white mt-3 tracking-tight leading-snug">
-                        Este Gol ya tiene el próximo dueño <span className="text-[#FFC93C]">en camino</span>. Con una boleta de <span className="text-[#E60012]">$5.000</span>, <span className="text-[#E60012]">puedes ser tú</span>.
+                        Imagina este coupé estacionado afuera de tu casa <span className="text-[#FFC93C]">¿por 5.000 mil pesos?</span>. <span className="text-[#E60012]">Una ganga...</span>
                     </h2>
                 </div>
 
-                {/* MASCOTA EN CELULAR: fila propia entre el texto y las fotos (en computador se usa la mascota flotante de arriba) */}
+                {/* MASCOTA EN CELULAR: fila propia entre el texto y las fotos */}
                 <motion.div
                     initial={{ opacity: 0, x: 60 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -220,7 +232,6 @@ export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ on
                     </AnimatePresence>
                 </div>
 
-                {/* Pista solo para celular (en computador el ojo rojo aparece al pasar el cursor) */}
                 <p className="lg:hidden text-center text-xs text-slate-400 mt-6">
                     Toca la foto del centro para ampliarla
                 </p>
@@ -257,12 +268,12 @@ export const VehicleGallerySection: React.FC<VehicleGallerySectionProps> = ({ on
                     </button>
                 </div>
 
-                {/* Llamado a la acción: quien se convence viendo el carro puede elegir sus números */}
+                {/* BOTÓN CON SCROLL A BOLETOS EN LUGAR DE ABRIR MODAL */}
                 <div className="flex justify-center mt-8">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={onOpenPurchaseModal}
+                        onClick={scrollToTickets}
                         className="inline-flex items-center justify-center gap-2 bg-[#E60012] text-white text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-full shadow-glow-button cursor-pointer"
                     >
                         <span>ELEGIR NÚMEROS</span>

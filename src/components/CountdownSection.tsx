@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck } from 'lucide-react';
+// Se eliminó la importación y uso de ShieldCheck
 
 interface CountdownSectionProps {
   soldTicketsCount: number;
@@ -69,7 +69,7 @@ export const CountdownSection: React.FC<CountdownSectionProps> = ({
             exit="hidden"
             viewport={{ once: false, amount: 0.3 }}
           >
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#E60012] mb-2">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#E60012] mb-2 text-center lg:text-left">
               TIEMPO PARA EL SORTEO FINAL (6 DE ENERO 2027)
             </span>
             <div className="flex items-center gap-3">
@@ -128,10 +128,6 @@ export const CountdownSection: React.FC<CountdownSectionProps> = ({
                 style={{ width: `${Math.min(Number(percentage), 100)}%` }}
               ></div>
             </div>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>La rifa se celebrará en la fecha indicada independientemente del 100% vendido.</span>
-            </p>
           </motion.div>
         </div>
       </div>

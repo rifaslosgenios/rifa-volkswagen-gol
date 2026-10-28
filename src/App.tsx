@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
@@ -10,12 +5,10 @@ import { db } from './firebaseConfig';
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
 import { HeroV2 } from './components/HeroV2';
-import { Hero } from './components/Hero';
 import { HeroPhotoCarousel, useIsDesktop } from './components/HeroPhotoCarousel';
 import { CountdownSection } from './components/CountdownSection';
 import { VehicleSpecs } from './components/VehicleSpecs';
 import { VehicleGallerySection } from './components/VehicleGallerySection';
-import { TicketSelector } from './components/TicketSelector';
 import { Testimonials } from './components/Testimonials';
 import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
@@ -62,38 +55,37 @@ export default function App() {
     isLegalModalOpen ||
     isVehicleModalOpen;
 
-  // Consultar conteo real en Firebase y aplicar simulación de marketing
+  // CORRECCIÓN: Separamos la simulación de la petición a Firebase
   useEffect(() => {
     const fetchRealSalesCount = async () => {
+      // 1. Calculamos la simulación de marketing PRIMERO (Siempre funciona)
+      const startDate = new Date('2026-10-25').getTime();
+      const now = Date.now();
+      const daysPassed = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
+
+      const baseFakeCount = 2500;
+      const dailyFakeSales = 15;
+
+      const simulatedCount = Math.floor(baseFakeCount + (daysPassed * dailyFakeSales));
+      let realCount = 0;
+
+      // 2. Intentamos buscar el dato real en Firebase
       try {
-        // 1. Consultar el número real en la base de datos
         const coll = collection(db, 'tickets');
         const q = query(coll, where('status', 'in', ['paid', 'reserved']));
         const snapshot = await getCountFromServer(q);
-        const realCount = snapshot.data().count;
-
-        // 2. Crear la simulación (La "Fachada")
-        const startDate = new Date('2026-10-25').getTime();
-        const now = Date.now();
-        const daysPassed = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
-
-        const baseFakeCount = 2500; // Arranca en 25% (2500 boletos)
-        const dailyFakeSales = 15;  // Suma 15 boletos cada día
-
-        // Calcula cuántos boletos simulados van hasta hoy
-        const simulatedCount = Math.floor(baseFakeCount + (daysPassed * dailyFakeSales));
-
-        // 3. El equilibrio: Mostrar siempre el número mayor
-        const displayCount = Math.max(simulatedCount, realCount);
-
-        // 4. Enviar a la barra superior y al contador
-        setRealSoldTotal(displayCount);
-        setSoldPercentage(((displayCount / TOTAL_TICKETS_AVAILABLE) * 100).toFixed(1));
-
+        realCount = snapshot.data().count;
       } catch (error) {
         console.log("Esperando conexión o datos en Firebase...");
       }
+
+      // 3. Comparamos y pasamos el número mayor a los componentes
+      const displayCount = Math.max(simulatedCount, realCount);
+
+      setRealSoldTotal(displayCount);
+      setSoldPercentage(((displayCount / TOTAL_TICKETS_AVAILABLE) * 100).toFixed(1));
     };
+
     fetchRealSalesCount();
   }, []);
 
@@ -144,7 +136,6 @@ export default function App() {
 
   const handlePurchaseComplete = (ticket: PurchasedTicket) => {
     setPurchasedTickets((prev) => [ticket, ...prev]);
-    // Actualizamos el contador localmente de forma temporal hasta que refresquen la página
     setRealSoldTotal(prev => Math.max(prev + ticket.numbers.length, prev));
   };
 
@@ -173,15 +164,6 @@ export default function App() {
             onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
           />
 
-          <Hero
-            onOpenPurchaseModal={() => handleOpenPurchase()}
-            onOpenVehicleModal={() => {
-              setSelectedVehicleSpec(null);
-              setIsVehicleModalOpen(true);
-            }}
-            onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
-          />
-
           <VehicleGallerySection onOpenPurchaseModal={() => handleOpenPurchase()} />
 
           {!isDesktop && (
@@ -194,11 +176,6 @@ export default function App() {
 
           <VehicleSpecs onSelectSpec={handleOpenSpecDetail} />
           <Testimonials />
-
-          <TicketSelector
-            onSelectPackage={(pkg) => handleOpenPurchase(pkg)}
-            onOpenNotaryModal={() => setIsNotaryModalOpen(true)}
-          />
 
           <CountdownSection
             soldTicketsCount={realSoldTotal}

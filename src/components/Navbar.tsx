@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, PlusCircle, Ticket, Menu, X } from 'lucide-react';
+import { Sparkles, PlusCircle, Menu, X } from 'lucide-react';
 
 interface NavbarProps {
   onOpenPurchaseModal: () => void;
@@ -10,9 +10,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenPurchaseModal,
-  onOpenMyTicketsModal,
   onOpenLegalModal,
-  ticketsCount,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -56,22 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
         </nav>
 
-        {/* Action Buttons & My Tickets */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {ticketsCount > 0 && (
-            <button
-              onClick={onOpenMyTicketsModal}
-              className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-[#111827] text-xs sm:text-sm font-bold uppercase tracking-wider px-2.5 sm:px-3.5 py-2.5 rounded-full border border-slate-300 transition-all cursor-pointer"
-              title="Ver mis boletos comprados"
-            >
-              <Ticket className="w-4 h-4 text-[#E60012]" />
-              <span className="hidden sm:inline">Mis Boletos</span>
-              <span className="bg-[#E60012] text-white text-[11px] px-1.5 py-0.2 rounded-full font-bold">
-                {ticketsCount}
-              </span>
-            </button>
-          )}
-
           <button
             onClick={onOpenPurchaseModal}
             className="inline-flex items-center gap-2 bg-[#E60012] hover:bg-[#B3000E] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-full shadow-glow-button hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
@@ -85,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile hamburger button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-1.5 sm:p-2 text-slate-600 hover:text-[#E60012] focus:outline-none"
+            className="lg:hidden p-1.5 sm:p-2 text-slate-600 hover:text-[#E60012] focus:outline-none cursor-pointer"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -129,18 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </a>
           </nav>
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-            {ticketsCount > 0 && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenMyTicketsModal();
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 rounded-full font-bold text-xs uppercase text-slate-800"
-              >
-                <Ticket className="w-4 h-4 text-[#E60012]" />
-                Mis Boletos ({ticketsCount})
-              </button>
-            )}
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
