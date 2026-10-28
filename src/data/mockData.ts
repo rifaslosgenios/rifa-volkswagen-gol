@@ -1,18 +1,29 @@
 import { TicketPackage, VehicleSpec, FaqItem, TestimonialItem } from '../types';
 
 // 1. Carrusel Superior: Exclusivamente las fotos con moño (M) para el Hero
-export const HERO_CAROUSEL_PHOTOS = Array.from({ length: 28 }, (_, index) => {
-  return new URL(`../assets/galeria/gol M (${index + 1}).jpeg`, import.meta.url).href;
-});
+export const HERO_CAROUSEL_PHOTOS: string[] = [];
+for (let i = 1; i <= 7; i++) {
+  // Conservando los espacios originales y la extensión .jpeg / .webp
+  HERO_CAROUSEL_PHOTOS.push(new URL(`../assets/galeria/gol MJP (${i}).jpeg`, import.meta.url).href);
+  HERO_CAROUSEL_PHOTOS.push(new URL(`../assets/galeria/gol MW (${i}).webp`, import.meta.url).href);
+}
 
 // 2. Galería Completa Inferior: Intercaladas Femenino (F) y Masculino (H)
-const femalePhotos = Array.from({ length: 17 }, (_, index) => {
-  return new URL(`../assets/galeria/gol F (${index + 1}).jpeg`, import.meta.url).href;
-});
+const femalePhotos: string[] = [];
+for (let i = 1; i <= 6; i++) {
+  femalePhotos.push(new URL(`../assets/galeria/gol FJP (${i}).jpeg`, import.meta.url).href);
+}
+for (let i = 1; i <= 13; i++) {
+  femalePhotos.push(new URL(`../assets/galeria/gol FW (${i}).webp`, import.meta.url).href);
+}
 
-const malePhotos = Array.from({ length: 13 }, (_, index) => {
-  return new URL(`../assets/galeria/gol H (${index + 1}).jpeg`, import.meta.url).href;
-});
+const malePhotos: string[] = [];
+for (let i = 1; i <= 7; i++) {
+  malePhotos.push(new URL(`../assets/galeria/gol HJP (${i}).jpeg`, import.meta.url).href);
+}
+for (let i = 1; i <= 6; i++) {
+  malePhotos.push(new URL(`../assets/galeria/gol HW (${i}).webp`, import.meta.url).href);
+}
 
 // Mezcla intercalada: una de mujer y una de hombre de manera sucesiva
 export const VEHICLE_GALLERY_PHOTOS: string[] = [];
@@ -23,10 +34,10 @@ for (let i = 0; i < maxLength; i++) {
 }
 
 // Rutas estáticas para las tarjetas técnicas del vehículo
-import motorImg from '../assets/galeria/gol H (2).jpeg';
-import exteriorImg from '../assets/galeria/gol F (5).jpeg';
-import papersImg from '../assets/galeria/gol H (4).jpeg';
-import fuelImg from '../assets/galeria/gol M (1).jpeg';
+const motorImg = new URL(`../assets/galeria/gol HJP (2).jpeg`, import.meta.url).href;
+const exteriorImg = new URL(`../assets/galeria/gol FW (5).webp`, import.meta.url).href;
+const papersImg = new URL(`../assets/galeria/gol HJP (4).jpeg`, import.meta.url).href;
+const fuelImg = new URL(`../assets/galeria/gol MJP (1).jpeg`, import.meta.url).href;
 
 export const NOTARY_INFO = {
   number: 1,
@@ -178,65 +189,65 @@ export const VEHICLE_SPECS: VehicleSpec[] = [
 
 export const TESTIMONIALS: TestimonialItem[] = [
   {
-    id: 'carlos',
+    id: '1',
     name: 'Carlos Martínez',
     location: 'Medellín',
-    role: 'Participante',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200',
+    role: 'Cliente verificado',
     quote: 'Pagué por Nequi y descargué mi comprobante en PDF de una vez. Todo muy claro y rápido. Con la fe intacta para ese Golcito 🙏',
     rating: 5,
-    accentColor: '#E60012',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    accentColor: '#E60012'
   },
   {
-    id: 'andres',
-    name: 'Andrés Parra',
-    location: 'Bogotá',
-    role: 'Participante',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=200',
-    quote: 'Súper breve el proceso. Subí el comprobante y pude revisar mis números en la sección de Mis Boletos de inmediato.',
-    rating: 5,
-    accentColor: '#C6F235',
-  },
-  {
-    id: 'diana',
-    name: 'Diana Rojas',
-    location: 'Cali',
-    role: 'Participante',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    quote: 'A 5 mil pesitos vale la pena probar suerte. Muy claro todo lo del Tránsito de Funza y los términos legales.',
-    rating: 5,
-    accentColor: '#E60012',
-  },
-  {
-    id: 'felipe',
-    name: 'Felipe Ospina',
-    location: 'Barranquilla',
-    role: 'Participante',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200',
-    quote: 'Aseguré mis 10 numeritos. La plataforma es muy fácil de usar y todo queda guardado transparente.',
-    rating: 5,
-    accentColor: '#C6F235',
-  },
-  {
-    id: 'laura',
+    id: '2',
     name: 'Laura Gómez',
-    location: 'Bucaramanga',
-    role: 'Participante',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
-    quote: 'Da mucha tranquilidad saber que se entrega con el traspaso radicado y sin enredos. Compré 5 números.',
-    rating: 5,
-    accentColor: '#E60012',
+    location: 'Bogotá',
+    role: 'Cliente verificada',
+    quote: 'La página está súper fácil de usar, los números se seleccionan rápido. Me dio un poco de dudas al principio, pero vi los medios de pago oficiales y me dio confianza.',
+    rating: 4,
+    avatar: null as unknown as string,
+    accentColor: '#FFC93C'
   },
   {
-    id: 'mateo',
-    name: 'Mateo Henao',
-    location: 'Pereira',
-    role: 'Participante',
-    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=200',
-    quote: 'Muy fácil pagar por Daviplata. Ojalá me lo gane, está muy bacano el carro 🔥',
+    id: '3',
+    name: 'Andrés Felipe',
+    location: 'Cali',
+    role: 'Cliente verificado',
+    quote: 'Excelente plataforma, pude elegir mis números de la suerte sin problema. La atención por WhatsApp también es muy buena, responden de una.',
     rating: 5,
-    accentColor: '#C6F235',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    accentColor: '#1D2B22'
   },
+  {
+    id: '4',
+    name: 'Diana Marcela',
+    location: 'Bucaramanga',
+    role: 'Cliente verificada',
+    quote: 'Me gustó la transparencia de todo. El proceso fue súper bien, la plataforma no se traba y el ticket llega al instante. Esperando el sorteo con ansias.',
+    rating: 4,
+    avatar: null as unknown as string,
+    accentColor: '#0B5D3B'
+  },
+  {
+    id: '5',
+    name: 'Jorge Eliécer',
+    location: 'Barranquilla',
+    role: 'Cliente verificado',
+    quote: 'Ya tengo mis 5 números. La compra con Daviplata fue en segundos y me llegó el correo confirmando mi participación. Súper recomendado.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=80',
+    accentColor: '#E60012'
+  },
+  {
+    id: '6',
+    name: 'Valentina Ríos',
+    location: 'Pereira',
+    role: 'Cliente verificada',
+    quote: 'Es la primera vez que participo en algo así. Todo el proceso se ve muy legal y seguro. ¡Ojalá me lo gane, está precioso el carro!',
+    rating: 4,
+    avatar: null as unknown as string,
+    accentColor: '#FFC93C'
+  }
 ];
 
 export const FAQ_ITEMS: FaqItem[] = [

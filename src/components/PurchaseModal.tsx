@@ -293,7 +293,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
       for (const num of numbers) {
         const ticketRef = doc(db, "tickets", num);
         await setDoc(ticketRef, {
-          status: 'sold',
+          status: 'reserved',
           orderId: orderRef.id,
           updatedAt: now
         }, { merge: true });
