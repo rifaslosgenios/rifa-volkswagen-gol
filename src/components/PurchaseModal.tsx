@@ -12,7 +12,6 @@ import {
   Maximize2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { NOTARY_INFO, TICKET_PACKAGES } from '../data/mockData';
 import { TicketPackage, PurchasedTicket } from '../types';
 
@@ -353,88 +352,92 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!completedTicket) return;
 
     try {
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      container.style.width = '600px';
-      container.style.backgroundColor = '#FFF8EC';
-      container.style.padding = '24px';
-      container.style.fontFamily = "'Fredoka', sans-serif";
-      container.style.boxSizing = 'border-box';
+      const doc = new jsPDF();
 
-      container.innerHTML = `
-        <div style="background: #FFF8EC; border: 2px solid #E2CF9E; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-          <div style="background: linear-gradient(to bottom, #C8102E, #9E0B22); padding: 16px; text-align: center; color: #FFE9A8; font-family: cursive; font-size: 32px; font-weight: bold;">
-            Sorteo de Reyes
-          </div>
-          <div style="height: 6px; background: linear-gradient(to right, #F2B33D, #FFE08A, #F2B33D);"></div>
+      // Franja superior verde institucional
+      doc.setFillColor(11, 93, 59);
+      doc.rect(0, 0, 210, 40, 'F');
 
-          <div style="padding: 20px; display: flex; gap: 20px; align-items: center;">
-            <div style="width: 140px; height: 140px; border-radius: 8px; border: 3px solid white; overflow: hidden; background: #C8102E; flex-shrink: 0;">
-              <img src="${santaImg}" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-            <div style="flex-grow: 1; font-size: 14px; color: #1D2B22; line-height: 1.5;">
-              <div style="margin-bottom: 6px;"><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Comprador</strong> ${completedTicket.buyerName}</div>
-              <div style="margin-bottom: 6px;"><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Celular</strong> ${completedTicket.buyerPhone}</div>
-              <div style="margin-bottom: 6px;"><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Fecha del sorteo</strong> ${DRAW_DATE}</div>
-              <div><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Juega con la</strong> ${LOTTERY}</div>
-            </div>
-          </div>
+      // Título principal
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(24);
+      doc.text("RIFA LOS GENIOS", 105, 18, { align: "center" });
 
-          <div style="padding: 0 20px 20px 20px;">
-            <div style="background: #0B5D3B; color: #FFE08A; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
-              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; opacity: 0.9;">Tus números oficiales de la suerte</div>
-              <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px;">${completedTicket.numbers.map(n => `#${n}`).join('   ')}</div>
-            </div>
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("SORTEO DE REYES - VOLKSWAGEN GOL MODELO 98", 105, 28, { align: "center" });
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px dashed #0B5D3B33; padding-top: 15px; font-size: 13px;">
-              <span style="background: #F2B33D; color: #3A2A00; padding: 6px 12px; border-radius: 20px; font-weight: bold;">Premio: Un Volkswagen Gol Modelo 98</span>
-              <strong style="font-size: 18px; color: #1D2B22;">Total: ${formatPrice(completedTicket.totalPrice)}</strong>
-            </div>
-          </div>
-        </div>
+      // Saludo al comprador
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(`¡Hola, ${completedTicket.buyerName}!`, 20, 55);
 
-        <div style="margin-top: 20px; text-align: center;">
-          <div style="font-size: 12px; font-weight: bold; color: #0B5D3B; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">El carro que puedes ganar</div>
-          <div style="display: flex; gap: 10px; justify-content: space-between;">
-            <div style="flex: 1; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #E2CF9E; background: #ddd;">
-              <img src="${vwLogo}" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-            <div style="flex: 1; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #E2CF9E; background: #ddd;">
-              <img src="${santaImg}" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-            <div style="flex: 1; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #E2CF9E; background: #ddd;">
-              <img src="${vwLogo}" style="width: 100%; height: 100%; object-fit: cover;" />
-            </div>
-          </div>
-        </div>
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text('Tus números han sido registrados y asegurados exitosamente:', 20, 63);
 
-        <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #666;">
-          Orden: ${completedTicket.orderNumber} | ${completedTicket.notaryProtocol}
-        </div>
-      `;
+      // Caja de detalles de la orden
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 207, 158);
+      doc.roundedRect(20, 70, 170, 55, 3, 3, 'FD');
 
-      document.body.appendChild(container);
+      doc.setFont("helvetica", "bold");
+      doc.text("No. Orden:", 25, 82);
+      doc.setFont("helvetica", "normal");
+      doc.text(completedTicket.orderNumber, 65, 82);
 
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true });
-      document.body.removeChild(container);
+      doc.setFont("helvetica", "bold");
+      doc.text("Celular:", 25, 92);
+      doc.setFont("helvetica", "normal");
+      doc.text(completedTicket.buyerPhone, 65, 92);
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 190;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      doc.setFont("helvetica", "bold");
+      doc.text("Medio de Pago:", 25, 102);
+      doc.setFont("helvetica", "normal");
+      doc.text(completedTicket.paymentMethod, 65, 102);
 
-      pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
-      pdf.save(`Tiquete_Genios_${completedTicket.orderNumber}.pdf`);
+      doc.setFont("helvetica", "bold");
+      doc.text("Total Cancelado:", 25, 112);
+      doc.setFont("helvetica", "normal");
+      doc.text(`$${completedTicket.totalPrice.toLocaleString('es-ES')}`, 65, 112);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Fecha de Compra:", 25, 122);
+      doc.setFont("helvetica", "normal");
+      doc.text(completedTicket.purchaseDate, 65, 122);
+
+      // Sección de números de la suerte
+      doc.setFillColor(11, 93, 59);
+      doc.roundedRect(20, 135, 170, 35, 3, 3, 'F');
+
+      doc.setTextColor(255, 248, 236);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("TUS NÚMEROS OFICIALES DE LA SUERTE:", 105, 145, { align: "center" });
+
+      doc.setFontSize(18);
+      doc.setTextColor(242, 179, 61);
+      const numsText = completedTicket.numbers.map(n => `#${n}`).join('    ');
+      doc.text(numsText, 105, 160, { align: "center" });
+
+      // Pie de página legal y notarial
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text("Juega con la Lotería de Boyacá | Sorteo: 27 de marzo del 2027", 105, 255, { align: "center" });
+      doc.text(`Certificado Notarial / Protocolo: ${completedTicket.notaryProtocol}`, 105, 263, { align: "center" });
+
+      doc.save(`Tiquete_Genios_${completedTicket.orderNumber}.pdf`);
 
     } catch (error) {
-      console.error("Error generando PDF visual:", error);
-      alert("Hubo un error al generar el PDF gráfico. Intenta de nuevo.");
+      console.error("Error generando PDF:", error);
+      alert("Hubo un error al generar el PDF. Intenta de nuevo.");
     }
   };
 
