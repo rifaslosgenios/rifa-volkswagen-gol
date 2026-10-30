@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
-import { ShoppingCart, ArrowRight } from 'lucide-react'; // <-- Agregamos iconos para la recuperación
+import { ShoppingCart, ArrowRight } from 'lucide-react';
 
 import { TopBar } from './components/TopBar';
 import { Navbar } from './components/Navbar';
@@ -23,9 +23,15 @@ import { CookieConsent } from './components/CookieConsent';
 import { TICKET_PACKAGES } from './data/mockData';
 import { PurchasedTicket, TicketPackage, VehicleSpec } from './types';
 
+// IMPORTAMOS EL NUEVO PANEL DE ADMINISTRACIÓN
+import AdminDashboard from './components/AdminDashboard';
+
 const TOTAL_TICKETS_AVAILABLE = 10000;
 
 export default function App() {
+  // ESTADO PARA LA RUTA OCULTA
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
+
   const [purchasedTickets, setPurchasedTickets] = useState<PurchasedTicket[]>(() => {
     try {
       const saved = localStorage.getItem('chic_glam_tickets');
@@ -46,7 +52,6 @@ export default function App() {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVehicleSpec, setSelectedVehicleSpec] = useState<VehicleSpec | null>(null);
 
-  // ESTADOS PARA RECUPERACIÓN DE CARRITO
   const [showRecoveryAlert, setShowRecoveryAlert] = useState(false);
 
   const isDesktop = useIsDesktop();
@@ -59,8 +64,17 @@ export default function App() {
     isLegalModalOpen ||
     isVehicleModalOpen;
 
+  // DETECTOR DE RUTA SECRETA
+  useEffect(() => {
+    // Si la URL termina en esto, activamos el modo Administrador
+    if (window.location.pathname === '/acceso-johan-privado') {
+      setIsAdminRoute(true);
+    }
+  }, []);
+
   // DETECTOR DE CARRITO ABANDONADO AL INICIAR LA APP
   useEffect(() => {
+    if (isAdminRoute) return; // No mostrar alertas en el panel admin
     const timer = setTimeout(() => {
       const savedCheckout = localStorage.getItem('pending_checkout');
       if (savedCheckout) {
@@ -71,11 +85,12 @@ export default function App() {
           }
         } catch (e) { }
       }
-    }, 800); // Un pequeño retraso para que la página cargue primero
+    }, 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAdminRoute]);
 
   useEffect(() => {
+    if (isAdminRoute) return;
     const fetchRealSalesCount = async () => {
       const startDate = new Date('2026-10-25').getTime();
       const now = Date.now();
@@ -103,7 +118,7 @@ export default function App() {
     };
 
     fetchRealSalesCount();
-  }, []);
+  }, [isAdminRoute]);
 
   useEffect(() => {
     if (anyModalOpen && !modalEntryRef.current) {
@@ -153,9 +168,13 @@ export default function App() {
   const handlePurchaseComplete = (ticket: PurchasedTicket) => {
     setPurchasedTickets((prev) => [ticket, ...prev]);
     setRealSoldTotal(prev => Math.max(prev + ticket.numbers.length, prev));
-    // Limpiamos la recuperación una vez comprado exitosamente
     localStorage.removeItem('pending_checkout');
   };
+
+  // SI ES LA RUTA SECRETA, MOSTRAMOS SOLO EL PANEL ADMIN
+  if (isAdminRoute) {
+    return <AdminDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-[#FCFCFD] text-slate-800 font-sans antialiased selection:bg-[#E60012] selection:text-white flex flex-col justify-between">

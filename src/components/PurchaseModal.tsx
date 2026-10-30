@@ -6,12 +6,9 @@ import {
   Download,
   ArrowRight,
   Upload,
-  ExternalLink,
-  Info,
   AlertCircle,
   Scissors,
   Snowflake,
-  Scan,
   Maximize2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -21,9 +18,17 @@ import { TicketPackage, PurchasedTicket } from '../types';
 // Importaciones para que Vite cargue las imágenes también en Vercel
 import santaImg from '../assets/santa.jpg';
 import vwLogo from '../assets/vw-logo.webp';
-// Tus códigos QR guardados en la carpeta assets con extensión .jpeg
+
+// Códigos QR guardados en la carpeta assets
 import qrNequi1 from '../assets/qr-nequi-1.jpeg';
 import qrNequi2 from '../assets/qr-nequi-2.jpeg';
+import qrBancolombia from '../assets/qr-bancolombia.jpeg';
+import qrDaviplata from '../assets/qr-daviplata.png';
+
+// Logos de los bancos guardados en la carpeta assets
+import logoNequi from '../assets/logo-nequi.jpeg';
+import logoBancolombia from '../assets/logo-bancolombia.jpeg';
+import logoDaviplata from '../assets/logo-daviplata.png';
 
 import { db } from '../firebaseConfig';
 import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
@@ -36,7 +41,7 @@ interface PurchaseModalProps {
 }
 
 /* ───────── DATOS DEL TIQUETE ───────── */
-const DRAW_DATE = 'Enero de 2027';
+const DRAW_DATE = '27 de marzo del 2027';
 const LOTTERY = 'Lotería de Boyacá';
 
 /* ───────── TIPOGRAFÍAS NAVIDEÑAS ───────── */
@@ -86,22 +91,16 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
-type PaymentMethodType = 'nequi' | 'daviplata' | 'bancolombia' | 'bbva' | 'pse' | 'efecty' | 'mercadopago';
+type PaymentMethodType = 'nequi' | 'daviplata' | 'bancolombia';
 
 const PAYMENT_OPTIONS: {
   id: PaymentMethodType;
   name: string;
-  initial: string;
-  bg: string;
-  fg: string;
-  requiresProof: boolean;
+  logo: string;
 }[] = [
-    { id: 'nequi', name: 'Nequi', initial: 'N', bg: '#DA0081', fg: '#FFFFFF', requiresProof: true },
-    { id: 'daviplata', name: 'Daviplata', initial: 'D', bg: '#ED1C24', fg: '#FFFFFF', requiresProof: true },
-    { id: 'bancolombia', name: 'Bancolombia', initial: 'B', bg: '#FDDA24', fg: '#1D2B22', requiresProof: true },
-    { id: 'pse', name: 'PSE', initial: 'P', bg: '#0066B3', fg: '#FFFFFF', requiresProof: true },
-    { id: 'efecty', name: 'Efecty', initial: 'E', bg: '#FFD200', fg: '#1D2B22', requiresProof: true },
-    { id: 'mercadopago', name: 'Mercado Pago', initial: 'M', bg: '#009EE3', fg: '#FFFFFF', requiresProof: false }
+    { id: 'nequi', name: 'Nequi', logo: logoNequi },
+    { id: 'bancolombia', name: 'Bancolombia', logo: logoBancolombia },
+    { id: 'daviplata', name: 'Daviplata', logo: logoDaviplata },
   ];
 
 const BARS = [2, 1, 3, 1, 1, 2, 3, 1, 2, 1, 1, 3, 2, 1, 2, 3, 1, 1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 1, 2, 3, 1, 2];
@@ -142,6 +141,15 @@ const CutLine: React.FC = () => {
   );
 };
 
+// Función para ajustar el tamaño de los números automáticamente
+const getNumberSizeClasses = (total: number) => {
+  if (total <= 2) return 'text-2xl px-3 py-1.5';
+  if (total <= 5) return 'text-xl px-2.5 py-1.5';
+  if (total <= 10) return 'text-lg px-2.5 py-1';
+  if (total <= 20) return 'text-base px-2 py-1';
+  return 'text-sm px-1.5 py-0.5';
+};
+
 export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   initialPackage,
   selection,
@@ -169,7 +177,6 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const [proofFileName, setProofFileName] = useState('');
   const [proofError, setProofError] = useState(false);
 
-  // Estado para controlar qué imagen de QR está ampliada
   const [expandedQR, setExpandedQR] = useState<string | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -241,7 +248,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (currentOption?.requiresProof && !paymentProof) {
+    if (!paymentProof) {
       setProofError(true);
       const uploadZone = document.getElementById('zona-comprobante');
       if (uploadZone) {
@@ -284,8 +291,8 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
         packageName: pkg.name,
         totalPrice: pkg.price,
         numbers: numbers,
-        status: currentOption?.requiresProof ? 'pending_verification' : 'pending_gateway',
-        paymentMethod,
+        status: 'pending',
+        paymentMethod: currentOption?.name || 'Manual',
         receiptImageBase64: paymentProof || null,
         createdAt: now
       });
@@ -318,7 +325,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
           }),
           notaryProtocol: `${NOTARY_INFO.protocol} / Acta #${Math.floor(1000 + Math.random() * 9000)}`,
           qrData: `NOTARY42:${orderNum}:${numbers.join(',')}`,
-          paymentMethod: currentOption?.name || 'Mercado Pago',
+          paymentMethod: currentOption?.name || 'Manual',
         };
 
         setCompletedTicket(ticket);
@@ -400,7 +407,6 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
   return (
     <>
-      {/* Modal para ampliar código QR */}
       {expandedQR && (
         <div className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 transition-all" onClick={() => setExpandedQR(null)}>
           <button onClick={() => setExpandedQR(null)} className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer">
@@ -417,7 +423,6 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
       <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
         <div className={`relative bg-white rounded-3xl w-full ${isFormView ? 'max-w-4xl' : 'max-w-xl'} max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
 
-          {/* Encabezado */}
           <div className="shrink-0 bg-[#1D2B22] text-[#FFF8EC] px-6 py-4 flex items-center justify-between border-b border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#C8102E] flex items-center justify-center shrink-0 shadow-md">
@@ -425,7 +430,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
               </div>
               <div>
                 <h3 className="font-heading font-black text-xl leading-none tracking-tight">Finaliza tu compra</h3>
-                <p className="text-xs text-white/70 mt-1">Sorteo de Reyes - Volkswagen Gol</p>
+                <p className="text-xs text-white/70 mt-1">Sorteo de Reyes - Volkswagen Gol Modelo 98</p>
               </div>
             </div>
             <button onClick={handleCloseModal} aria-label="Cerrar" className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer">
@@ -443,18 +448,9 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                   <span className="text-xs font-black uppercase tracking-widest text-[#0B5D3B]">¡Compra Confirmada!</span>
                   <h4 className="font-heading font-black text-2xl text-[#1D2B22] mt-2">¡Mucha suerte, {completedTicket.buyerName.split(' ')[0]}!</h4>
                   <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
-                    {currentOption?.requiresProof
-                      ? 'Hemos bloqueado tus números exitosamente y validaremos tu comprobante a la brevedad.'
-                      : 'Tus números están guardados. Finaliza el pago en la pasarela para asegurar tu participación.'}
+                    Hemos bloqueado tus números exitosamente y validaremos tu comprobante a la brevedad.
                   </p>
                 </div>
-
-                {paymentMethod === 'mercadopago' && (
-                  <a href="https://link.mercadopago.com.co/rifaslosgenios" target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-3 bg-[#009EE3] hover:bg-[#008ACA] text-white font-black text-sm uppercase tracking-wider py-4 px-6 rounded-2xl shadow-lg transition-transform transform hover:scale-[1.02] cursor-pointer">
-                    <span>PAGAR EN MERCADO PAGO</span>
-                    <ExternalLink className="w-5 h-5" />
-                  </a>
-                )}
 
                 <div className="bg-[#FFF8EC] border-2 border-dashed border-[#F2B33D] rounded-2xl p-5 text-left relative">
                   <div className="mb-3">
@@ -493,7 +489,6 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
             <form onSubmit={handlePayment} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 space-y-6">
 
-                {/* ════════ TIQUETE NAVIDEÑO ════════ */}
                 <div
                   className="relative bg-[#FFF8EC] rounded-2xl border border-[#E2CF9E] shadow-[0_14px_34px_rgba(11,61,42,0.2)] overflow-clip"
                   style={fontBody}
@@ -542,12 +537,12 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 border-t-2 border-dashed border-[#0B5D3B]/30 pt-3">
-                        <span className="inline-flex items-center gap-1.5 bg-[#F2B33D] text-[#3A2A00] text-[13px] font-bold px-3 py-1 rounded-full">
-                          Premio: Un Volkswagen Gol
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-[#0B5D3B]/30 pt-3">
+                        <span className="inline-flex items-center gap-1.5 bg-[#F2B33D] text-[#3A2A00] text-[12px] sm:text-[13px] font-bold px-3 py-1 rounded-full shrink-0">
+                          Premio: Un Volkswagen Gol Modelo 98
                           <img src={vwLogo} alt="" className="w-4 h-4 object-contain" />
                         </span>
-                        <span className="border-2 border-[#0B5D3B]/60 text-[#0B5D3B] text-[13px] font-semibold px-3 py-0.5 rounded-full">
+                        <span className="border-2 border-[#0B5D3B]/60 text-[#0B5D3B] text-[12px] sm:text-[13px] font-semibold px-3 py-0.5 rounded-full shrink-0">
                           {numbers.length} {numbers.length === 1 ? 'número' : 'números'}
                         </span>
                       </div>
@@ -555,7 +550,6 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
                     <CutLine />
 
-                    {/* NUEVA ZONA: Talón de control con el texto ajustado */}
                     <div className="w-full md:w-[38%] md:min-w-[240px] bg-white/55 p-4 sm:p-5 flex flex-col">
                       <div className="flex items-end justify-between border-b-[3px] border-[#0B5D3B] pb-2 mb-3">
                         <h5 style={fontDisplay} className="text-[22px] leading-[1.1] text-[#0B5D3B] max-w-[150px]">
@@ -575,7 +569,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         {numbers.map((n) => (
                           <span
                             key={n}
-                            className="bg-[#0B5D3B] text-[#FFE08A] text-[14px] font-semibold px-2 py-1 rounded-md"
+                            className={`bg-[#0B5D3B] text-[#FFE08A] font-bold rounded-md shadow-sm ${getNumberSizeClasses(numbers.length)}`}
                           >
                             {n}
                           </span>
@@ -599,12 +593,11 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                   </div>
                 </div>
 
-                {/* Selección de Medios de Pago */}
                 <div>
                   <h4 className="font-heading font-black text-base text-[#1D2B22] mb-1">Elige tu medio de pago</h4>
-                  <p className="text-xs text-slate-500 mb-3">Selecciona el método que prefieras para realizar tu aporte.</p>
+                  <p className="text-xs text-slate-500 mb-3">Selecciona el banco de tu preferencia para la transferencia.</p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {PAYMENT_OPTIONS.map((option) => {
                       const isSelected = paymentMethod === option.id;
                       return (
@@ -614,148 +607,129 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                           onClick={() => {
                             setPaymentMethod(option.id);
                             setProofError(false);
-                            // Lógica de Scroll Automático
-                            if (option.id === 'nequi') {
-                              setTimeout(() => {
-                                document.getElementById('zona-comprobante')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              }, 150);
-                            }
+                            setTimeout(() => {
+                              document.getElementById('zona-comprobante')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 150);
                           }}
-                          className={`relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl border-2 transition-all cursor-pointer bg-white ${isSelected
-                            ? 'border-[#0B5D3B] ring-2 ring-[#0B5D3B]/20 shadow-md transform scale-[1.01]'
+                          className={`relative flex items-center justify-center p-3 sm:p-4 h-20 sm:h-24 rounded-2xl border-2 transition-all cursor-pointer bg-white ${isSelected
+                            ? 'border-[#0B5D3B] ring-2 ring-[#0B5D3B]/20 shadow-md transform scale-[1.02]'
                             : 'border-slate-200 hover:border-[#0B5D3B]/40 hover:shadow-xs'
                             }`}
                         >
-                          {isSelected && <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#0B5D3B]" />}
-                          <span
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm transition-opacity ${isSelected ? 'opacity-100' : 'opacity-70'}`}
-                            style={{ backgroundColor: option.bg, color: option.fg }}
-                            aria-hidden
-                          >
-                            {option.initial}
-                          </span>
-                          <span className={`text-xs font-bold ${isSelected ? 'text-[#0B5D3B]' : 'text-slate-600'}`}>{option.name}</span>
+                          {isSelected && <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-[#0B5D3B] shadow-sm" />}
+                          <img src={option.logo} alt={option.name} className="w-full h-full object-contain" />
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Instrucciones y Carga de Comprobante / Pasarela */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  {paymentMethod === 'mercadopago' ? (
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-[#009EE3] shrink-0 mt-0.5" />
-                      <p className="text-sm text-slate-600 leading-relaxed">
-                        Al hacer clic en Confirmar, tus números quedarán asegurados y te redirigiremos a la pasarela segura de <strong className="text-slate-900">Mercado Pago</strong>. No necesitas subir comprobante.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4" id="zona-comprobante">
-                      <div className="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-100">
-                        <p className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Datos para transferencia a {currentOption?.name}:</p>
+                  <div className="space-y-4" id="zona-comprobante">
+                    <div className="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-100">
+                      <p className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Datos para transferencia a {currentOption?.name}:</p>
 
-                        {/* ──────────────── CÓDIGOS QR EXCLUSIVOS PARA NEQUI ──────────────── */}
-                        {paymentMethod === 'nequi' && (
-                          <div className="flex flex-col items-center justify-center my-6">
-
-                            {/* Texto rojo palpitante con flecha */}
-                            <div className="flex flex-col items-center gap-1 mb-4 animate-bounce">
-                              <span className="text-sm font-black text-[#C8102E] uppercase tracking-widest px-4 py-1.5 bg-[#C8102E]/10 rounded-full">
-                                ¡Escanea aquí para pagar!
-                              </span>
-                              <ArrowRight className="w-5 h-5 text-[#C8102E] rotate-90" />
-                            </div>
-
-                            <div className="flex flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-[400px]">
-
-                              {/* QR 1 (Tocable con indicador visual permanente) */}
-                              <div
-                                onClick={() => setExpandedQR(qrNequi1)}
-                                className="group relative cursor-pointer active:scale-95 transition-transform"
-                                title="Ampliar código QR"
-                              >
-                                <img src={qrNequi1} alt="QR Nequi Principal" className="w-32 h-32 sm:w-40 sm:h-40 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
-
-                                {/* Icono fijo permanente para móviles */}
-                                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
-                                  <Maximize2 className="w-4 h-4 text-white" />
-                                </div>
-
-                                {/* Overlay oscuro para computadores (hover) */}
-                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
-                                  <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
-                                </div>
-                              </div>
-
-                              {/* QR 2 (Tocable con indicador visual permanente) */}
-                              <div
-                                onClick={() => setExpandedQR(qrNequi2)}
-                                className="group relative cursor-pointer active:scale-95 transition-transform"
-                                title="Ampliar código QR"
-                              >
-                                <img src={qrNequi2} alt="QR Nequi Secundario" className="w-32 h-32 sm:w-40 sm:h-40 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
-
-                                {/* Icono fijo permanente para móviles */}
-                                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
-                                  <Maximize2 className="w-4 h-4 text-white" />
-                                </div>
-
-                                {/* Overlay oscuro para computadores (hover) */}
-                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
-                                  <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
-                                </div>
-                              </div>
-
-                            </div>
-                            <p className="text-slate-400 text-[10px] font-bold mt-4 uppercase">Toca cualquier código para ampliarlo</p>
-                          </div>
-                        )}
-
-                        <ul className="text-sm space-y-1 text-slate-600">
-                          <li><span className="font-semibold text-slate-900">Tipo de cuenta:</span> Ahorros / Llave Bre-B</li>
-                          {/* Se omitió el número para NEQUI para que la persona tenga que escanear */}
-                          {paymentMethod === 'bancolombia' ? (
-                            <li><span className="font-semibold text-slate-900">Número:</span> @narcy419</li>
-                          ) : paymentMethod === 'bbva' ? (
-                            <li><span className="font-semibold text-slate-900">Número:</span> bbvanm4191</li>
-                          ) : null}
-                          <li><span className="font-semibold text-slate-900">Titular:</span> Narcy Manosalva</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-                          Sube la captura de tu transferencia <span className="text-[#C8102E]">*</span>
-                        </label>
-                        <div className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-colors ${proofError ? 'border-[#C8102E] bg-[#C8102E]/5 animate-pulse' : 'border-slate-300 hover:bg-slate-50'}`}>
-                          <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={handleFileChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                          <div className="flex flex-col items-center gap-1.5 pointer-events-none">
-                            <Upload className={`w-6 h-6 ${proofError ? 'text-[#C8102E]' : 'text-[#0B5D3B]'}`} />
-                            <span className={`text-xs font-bold ${proofError ? 'text-[#C8102E]' : 'text-slate-700'}`}>
-                              {proofFileName ? <span className="text-[#0B5D3B]">✓ {proofFileName} cargado correctamente</span> : 'Toca aquí para subir tu comprobante de pago'}
-                            </span>
-                          </div>
+                      <div className="flex flex-col items-center justify-center my-6">
+                        <div className="flex flex-col items-center gap-1 mb-4 animate-bounce">
+                          <span className="text-sm font-black text-[#C8102E] uppercase tracking-widest px-4 py-1.5 bg-[#C8102E]/10 rounded-full">
+                            ¡Escanea aquí para pagar!
+                          </span>
+                          <ArrowRight className="w-5 h-5 text-[#C8102E] rotate-90" />
                         </div>
 
-                        {proofError && (
-                          <p className="mt-2 text-xs font-bold text-[#C8102E] flex items-center gap-1 animate-pulse">
-                            <AlertCircle className="w-4 h-4" /> No has cargado el comprobante de tu pago. Por favor, sube la captura para continuar.
-                          </p>
-                        )}
+                        <div className="flex flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-[400px]">
+                          {paymentMethod === 'nequi' && (
+                            <>
+                              <div onClick={() => setExpandedQR(qrNequi1)} className="group relative cursor-pointer active:scale-95 transition-transform" title="Ampliar código QR">
+                                <img src={qrNequi1} alt="QR Nequi Principal" className="w-32 h-32 sm:w-40 sm:h-40 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
+                                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
+                                  <Maximize2 className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
+                                  <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
+                                </div>
+                              </div>
+
+                              <div onClick={() => setExpandedQR(qrNequi2)} className="group relative cursor-pointer active:scale-95 transition-transform" title="Ampliar código QR">
+                                <img src={qrNequi2} alt="QR Nequi Secundario" className="w-32 h-32 sm:w-40 sm:h-40 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
+                                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
+                                  <Maximize2 className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
+                                  <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {paymentMethod === 'bancolombia' && (
+                            <div onClick={() => setExpandedQR(qrBancolombia)} className="group relative cursor-pointer active:scale-95 transition-transform" title="Ampliar código QR">
+                              <img src={qrBancolombia} alt="QR Bancolombia" className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
+                              <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
+                                <Maximize2 className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
+                                <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {paymentMethod === 'daviplata' && (
+                            <div onClick={() => setExpandedQR(qrDaviplata)} className="group relative cursor-pointer active:scale-95 transition-transform" title="Ampliar código QR">
+                              <img src={qrDaviplata} alt="QR Daviplata" className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-2 transition-transform transform group-hover:scale-105" />
+                              <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-[#0B5D3B] p-2 rounded-full shadow-lg animate-pulse z-10">
+                                <Maximize2 className="w-4 h-4 text-white" />
+                              </div>
+                              <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-xs">
+                                <span className="text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">Ver grande</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-slate-400 text-[10px] font-bold mt-4 uppercase">Toca cualquier código para ampliarlo</p>
                       </div>
+
+                      <ul className="text-sm space-y-1 text-slate-600">
+                        <li><span className="font-semibold text-slate-900">Tipo de cuenta:</span> Ahorros / Llave Bre-B</li>
+                        {paymentMethod === 'bancolombia' ? (
+                          <li><span className="font-semibold text-slate-900">Número:</span> @narcy419</li>
+                        ) : paymentMethod === 'daviplata' ? (
+                          <li><span className="font-semibold text-slate-900">Número:</span> @PLATA3163769990</li>
+                        ) : null}
+                        <li><span className="font-semibold text-slate-900">Titular:</span> Narcy Manosalva</li>
+                      </ul>
                     </div>
-                  )}
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                        Sube la captura de tu transferencia <span className="text-[#C8102E]">*</span>
+                      </label>
+                      <div className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-colors ${proofError ? 'border-[#C8102E] bg-[#C8102E]/5 animate-pulse' : 'border-slate-300 hover:bg-slate-50'}`}>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={handleFileChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center gap-1.5 pointer-events-none">
+                          <Upload className={`w-6 h-6 ${proofError ? 'text-[#C8102E]' : 'text-[#0B5D3B]'}`} />
+                          <span className={`text-xs font-bold ${proofError ? 'text-[#C8102E]' : 'text-slate-700'}`}>
+                            {proofFileName ? <span className="text-[#0B5D3B]">✓ {proofFileName} cargado correctamente</span> : 'Toca aquí para subir tu comprobante de pago'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {proofError && (
+                        <p className="mt-2 text-xs font-bold text-[#C8102E] flex items-center gap-1 animate-pulse">
+                          <AlertCircle className="w-4 h-4" /> No has cargado el comprobante de tu pago. Por favor, sube la captura para continuar.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
               </div>
 
-              {/* Barra Inferior del Modal */}
               <div className="shrink-0 bg-white border-t border-slate-200 px-5 py-3.5 sm:px-6 flex items-center justify-between gap-4">
                 <div>
                   <span className="block text-[10px] uppercase text-slate-400 font-bold">Total a cancelar</span>

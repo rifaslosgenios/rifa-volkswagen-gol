@@ -9,6 +9,11 @@ import { TicketPackage } from '../types';
 import mascotaImg from '../assets/mascota (1).png';
 import vwLogo from '../assets/vw-logo.webp';
 
+// IMPORTAMOS LOS LOGOS LOCALES
+import logoNequi from '../assets/logo-nequi.jpeg';
+import logoBancolombia from '../assets/logo-bancolombia.jpeg';
+import logoDaviplata from '../assets/logo-daviplata.png';
+
 export interface TicketSelection {
     pkg: TicketPackage;
     numbers: string[];
@@ -21,7 +26,7 @@ interface HeroV2Props {
     onOpenNotaryModal?: () => void;
 }
 
-const DRAW_DATE = 'Enero de 2027';
+const DRAW_DATE = '27 de marzo del 2027';
 const LOTTERY = 'Lotería de Boyacá';
 const TOTAL_NUMBERS = 10000;
 const BOARD_SIZE = 20;
@@ -30,13 +35,11 @@ const PHOTO_DURATION_MS = 4000;
 
 const PRIZE_BENEFITS = ['Traspaso', 'SOAT', 'Tecnomecánica', 'Tanque lleno'];
 
+// USAMOS TUS LOGOS LOCALES EXCLUSIVAMENTE
 const BANK_LOGOS = [
-    { name: 'Nequi', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Nequi_Colombia_logo.svg/512px-Nequi_Colombia_logo.svg.png' },
-    { name: 'Daviplata', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Logo_Daviplata.png/512px-Logo_Daviplata.png' },
-    { name: 'Bancolombia', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Logo_Bancolombia.svg/512px-Logo_Bancolombia.svg.png' },
-    { name: 'BBVA', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/BBVA_2019_logo.svg/512px-BBVA_2019_logo.svg.png' },
-    { name: 'PSE', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Logo_PSE.svg/512px-Logo_PSE.svg.png' },
-    { name: 'Efecty', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Logo_efecty.png/512px-Logo_efecty.png' }
+    { name: 'Nequi', url: logoNequi },
+    { name: 'Bancolombia', url: logoBancolombia },
+    { name: 'Daviplata', url: logoDaviplata }
 ];
 
 const FONTS_URL = 'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Mountains+of+Christmas:wght@700&family=Pacifico&display=swap';
@@ -364,6 +367,16 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
         onOpenPurchaseModal(payload);
     };
 
+    // BOTONES DE LOGO COMO ACCIONADORES DE PAGO
+    const handlePaymentLogoClick = () => {
+        if (selectedNumbers.length === 0) {
+            setMessage('❌ Aún no has seleccionado números. Elige tus números de la suerte primero.');
+            scrollToSection('ticket-details');
+        } else {
+            handleContinue();
+        }
+    };
+
     return (
         <section className="relative pt-4 pb-28 lg:pt-10 lg:pb-32 overflow-x-clip bg-white" data-purpose="hero-banner">
             <motion.div
@@ -523,6 +536,25 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                                         <FieldRow label="Correo" type="email" inputMode="email" value={buyerEmail} onChange={setBuyerEmail} placeholder="tucorreo@ejemplo.com" autoComplete="email" />
                                         <FieldRow label="Celular" type="tel" inputMode="tel" value={buyerPhone} onChange={setBuyerPhone} placeholder="300 000 0000" autoComplete="tel" />
 
+                                        {/* NÚMEROS ELEGIDOS - VERSIÓN WEB */}
+                                        {selectedNumbers.length > 0 && (
+                                            <div className="hidden lg:block mt-5 mb-2 w-full">
+                                                <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#0B5D3B] mb-2 opacity-90">Tus números elegidos</span>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {selectedNumbers.map(n => (
+                                                        <button
+                                                            key={n}
+                                                            type="button"
+                                                            onClick={() => toggleNumber(n)}
+                                                            className="bg-[#0B5D3B] text-white text-[15px] font-bold px-2 py-1 rounded-md cursor-pointer hover:bg-[#C8102E] transition-colors touch-manipulation flex items-center gap-1 shadow-sm"
+                                                        >
+                                                            {n} <span className="text-[16px] leading-none mb-[2px]">×</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div className="grid grid-cols-[1fr_auto] items-end gap-3 pt-3">
                                             <div>
                                                 <span className={labelClass}>Total a pagar</span>
@@ -538,11 +570,20 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                                         </div>
                                     </div>
 
+                                    {/* MEDIOS DE PAGO CON BOTONES - VERSIÓN WEB */}
                                     <div className="hidden lg:flex mt-auto pt-6 flex-col items-center justify-end">
-                                        <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#0B5D3B] mb-3 opacity-80">Medios de pago oficiales</span>
-                                        <div className="flex flex-wrap justify-center gap-3">
+                                        <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#0B5D3B] mb-3 opacity-80 text-center w-full">Medios de pago oficiales</span>
+                                        <div className="flex flex-wrap justify-center gap-3 w-full">
                                             {BANK_LOGOS.map(logo => (
-                                                <img key={logo.name} src={logo.url} alt={logo.name} className="h-6 object-contain grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100" />
+                                                <button
+                                                    key={logo.name}
+                                                    type="button"
+                                                    onClick={handlePaymentLogoClick}
+                                                    className="h-14 w-auto bg-white rounded-lg border border-slate-200 shadow-sm p-2 hover:border-[#0B5D3B] hover:scale-105 transition-all cursor-pointer"
+                                                    title={`Pagar con ${logo.name}`}
+                                                >
+                                                    <img src={logo.url} alt={logo.name} className="h-full w-full object-contain rounded-md" />
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
@@ -560,7 +601,7 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                                             <InfoItem label="Juega con la">{LOTTERY}</InfoItem>
                                             <InfoItem label="Premio">
                                                 <span className="inline-flex items-center gap-1.5">
-                                                    Un Volkswagen Gol
+                                                    Un Volkswagen Gol Modelo 98
                                                     <img src={vwLogo} alt="" className="w-4 h-4 object-contain" />
                                                 </span>
                                             </InfoItem>
@@ -737,11 +778,20 @@ export const HeroV2: React.FC<HeroV2Props> = ({ onOpenPurchaseModal }) => {
                                             )}
                                         </div>
 
-                                        <div className="mt-5 lg:hidden bg-[#0B5D3B]/5 p-3 rounded-xl">
-                                            <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#0B5D3B] mb-2.5 text-center opacity-80">Medios de pago oficiales</span>
-                                            <div className="flex flex-wrap justify-center items-center gap-3.5">
+                                        {/* MEDIOS DE PAGO CON BOTONES - VERSIÓN MÓVIL */}
+                                        <div className="mt-5 lg:hidden bg-[#0B5D3B]/5 p-4 rounded-xl text-center">
+                                            <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#0B5D3B] mb-3 opacity-90">Medios de pago oficiales</span>
+                                            <div className="flex flex-wrap justify-center items-center gap-3">
                                                 {BANK_LOGOS.map(logo => (
-                                                    <img key={logo.name} src={logo.url} alt={logo.name} className="h-5 object-contain grayscale opacity-70" />
+                                                    <button
+                                                        key={logo.name}
+                                                        type="button"
+                                                        onClick={handlePaymentLogoClick}
+                                                        className="h-14 w-auto bg-white rounded-lg border border-slate-200 shadow-sm p-2 hover:border-[#0B5D3B] active:scale-95 transition-all cursor-pointer"
+                                                        title={`Pagar con ${logo.name}`}
+                                                    >
+                                                        <img src={logo.url} alt={logo.name} className="h-full w-full object-contain rounded-md" />
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>
