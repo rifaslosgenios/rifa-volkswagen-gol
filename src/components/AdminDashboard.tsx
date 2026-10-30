@@ -8,7 +8,10 @@ interface OrderData {
     buyerName: string;
     buyerPhone: string;
     numbers: string[];
-    totalAmount: number;
+    totalAmount?: number;
+    totalPrice?: number;
+    amount?: number;
+    price?: number;
     paymentMethod: string;
     receiptImageBase64: string;
     createdAt: any; // Timestamp de Firebase
@@ -26,7 +29,6 @@ export default function AdminDashboard() {
     // Intentar login
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        // VITE_ADMIN_PASSWORD debe estar en tu archivo .env
         const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'genios2026*';
         if (password === correctPassword) {
             setIsAuthenticated(true);
@@ -42,13 +44,12 @@ export default function AdminDashboard() {
         setLoading(true);
         try {
             const ordersRef = collection(db, 'orders');
-            // Filtramos las que tengan estado pending
             const q = query(ordersRef, where('status', '==', 'pending'));
             const querySnapshot = await getDocs(q);
 
             const fetchedOrders: OrderData[] = [];
-            querySnapshot.forEach((doc) => {
-                fetchedOrders.push({ id: doc.id, ...doc.data() } as OrderData);
+            querySnapshot.forEach((docSnap) => {
+                fetchedOrders.push({ id: docSnap.id, ...docSnap.data() } as OrderData);
             });
 
             setOrders(fetchedOrders);
@@ -68,9 +69,6 @@ export default function AdminDashboard() {
             await updateDoc(orderRef, {
                 status: 'success'
             });
-
-            // Nota: Si tienes una colección separada de 'tickets', 
-            // aquí deberías hacer un batch update para pasar esos tickets de 'reserved' a 'sold' o 'paid'.
 
             setOrders(prev => prev.filter(o => o.id !== orderId));
             alert("¡Orden Aprobada con éxito!");
@@ -103,6 +101,12 @@ export default function AdminDashboard() {
         return date.toLocaleString('es-CO', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
         });
+    };
+
+    // FUNCIÓN AUXILIAR PARA OBTENER EL PRECIO SIN IMPORTar CÓMO SE LLAME EL CAMPO EN FIREBASE
+    const getOrderAmount = (order: OrderData) => {
+        const amount = order.totalAmount ?? order.totalPrice ?? order.amount ?? order.price ?? 0;
+        return Number(amount).toLocaleString('es-CO');
     };
 
     // PANTALLA DE LOGIN
@@ -198,7 +202,7 @@ export default function AdminDashboard() {
 
                                         <div className="flex justify-between items-center bg-green-50 text-green-800 p-3 rounded-xl font-bold">
                                             <span>Total reportado:</span>
-                                            <span className="text-lg">${order.totalAmount?.toLocaleString('es-CO')}</span>
+                                            <span className="text-lg">${getOrderAmount(order)}</span>
                                         </div>
                                     </div>
 

@@ -12,6 +12,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { NOTARY_INFO, TICKET_PACKAGES } from '../data/mockData';
 import { TicketPackage, PurchasedTicket } from '../types';
 
@@ -141,7 +142,6 @@ const CutLine: React.FC = () => {
   );
 };
 
-// Función para ajustar el tamaño de los números automáticamente
 const getNumberSizeClasses = (total: number) => {
   if (total <= 2) return 'text-2xl px-3 py-1.5';
   if (total <= 5) return 'text-xl px-2.5 py-1.5';
@@ -178,6 +178,19 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const [proofError, setProofError] = useState(false);
 
   const [expandedQR, setExpandedQR] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (expandedQR) {
+      window.history.pushState({ qrOpen: true }, '');
+      const handlePopState = () => {
+        setExpandedQR(null);
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [expandedQR]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
@@ -289,7 +302,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
         buyerEmail: buyer.email,
         buyerPhone: buyer.phone,
         packageName: pkg.name,
-        totalPrice: pkg.price,
+        totalAmount: pkg.price,
         numbers: numbers,
         status: 'pending',
         paymentMethod: currentOption?.name || 'Manual',
@@ -340,67 +353,89 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!completedTicket) return;
 
-    const doc = new jsPDF();
-    doc.setFillColor(11, 93, 59);
-    doc.rect(0, 0, 210, 35, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("RIFA LOS GENIOS", 105, 18, { align: "center" });
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("COMPROBANTE OFICIAL DE COMPRA", 105, 26, { align: "center" });
+    try {
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '600px';
+      container.style.backgroundColor = '#FFF8EC';
+      container.style.padding = '24px';
+      container.style.fontFamily = "'Fredoka', sans-serif";
+      container.style.boxSizing = 'border-box';
 
-    doc.setTextColor(17, 24, 39);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text(`¡Hola, ${completedTicket.buyerName}!`, 20, 55);
+      container.innerHTML = `
+        <div style="background: #FFF8EC; border: 2px solid #E2CF9E; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+          <div style="background: linear-gradient(to bottom, #C8102E, #9E0B22); padding: 16px; text-align: center; color: #FFE9A8; font-family: cursive; font-size: 32px; font-weight: bold;">
+            Sorteo de Reyes
+          </div>
+          <div style="height: 6px; background: linear-gradient(to right, #F2B33D, #FFE08A, #F2B33D);"></div>
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text('Tus números han sido asignados exitosamente:', 20, 65);
+          <div style="padding: 20px; display: flex; gap: 20px; align-items: center;">
+            <div style="width: 140px; height: 140px; border-radius: 8px; border: 3px solid white; overflow: hidden; background: #C8102E; flex-shrink: 0;">
+              <img src="${santaImg}" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <div style="flex-grow: 1; font-size: 14px; color: #1D2B22; line-height: 1.5;">
+              <div style="margin-bottom: 6px;"><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Comprador</strong> ${completedTicket.buyerName}</div>
+              <div style="margin-bottom: 6px;"><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Celular</strong> ${completedTicket.buyerPhone}</div>
+              <div style="margin-bottom: 6px;"><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Fecha del sorteo</strong> ${DRAW_DATE}</div>
+              <div><strong style="color: #0B5D3B; font-size: 11px; text-transform: uppercase; display: block;">Juega con la</strong> ${LOTTERY}</div>
+            </div>
+          </div>
 
-    doc.setFillColor(248, 250, 252);
-    doc.rect(20, 75, 170, 50, 'F');
+          <div style="padding: 0 20px 20px 20px;">
+            <div style="background: #0B5D3B; color: #FFE08A; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; opacity: 0.9;">Tus números oficiales de la suerte</div>
+              <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px;">${completedTicket.numbers.map(n => `#${n}`).join('   ')}</div>
+            </div>
 
-    doc.setFont("helvetica", "bold");
-    doc.text("No. Orden:", 25, 85);
-    doc.setFont("helvetica", "normal");
-    doc.text(completedTicket.orderNumber, 60, 85);
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px dashed #0B5D3B33; padding-top: 15px; font-size: 13px;">
+              <span style="background: #F2B33D; color: #3A2A00; padding: 6px 12px; border-radius: 20px; font-weight: bold;">Premio: Un Volkswagen Gol Modelo 98</span>
+              <strong style="font-size: 18px; color: #1D2B22;">Total: ${formatPrice(completedTicket.totalPrice)}</strong>
+            </div>
+          </div>
+        </div>
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Medio de Pago:", 25, 95);
-    doc.setFont("helvetica", "normal");
-    doc.text(completedTicket.paymentMethod, 60, 95);
+        <div style="margin-top: 20px; text-align: center;">
+          <div style="font-size: 12px; font-weight: bold; color: #0B5D3B; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">El carro que puedes ganar</div>
+          <div style="display: flex; gap: 10px; justify-content: space-between;">
+            <div style="flex: 1; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #E2CF9E; background: #ddd;">
+              <img src="${vwLogo}" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <div style="flex: 1; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #E2CF9E; background: #ddd;">
+              <img src="${santaImg}" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <div style="flex: 1; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #E2CF9E; background: #ddd;">
+              <img src="${vwLogo}" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+          </div>
+        </div>
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Total:", 25, 105);
-    doc.setFont("helvetica", "normal");
-    doc.text(`$${completedTicket.totalPrice.toLocaleString('es-ES')}`, 60, 105);
+        <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #666;">
+          Orden: ${completedTicket.orderNumber} | ${completedTicket.notaryProtocol}
+        </div>
+      `;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Fecha:", 25, 115);
-    doc.setFont("helvetica", "normal");
-    doc.text(completedTicket.purchaseDate, 60, 115);
+      document.body.appendChild(container);
 
-    doc.setFont("helvetica", "bold");
-    doc.text("TUS NÚMEROS DE LA SUERTE:", 20, 140);
+      const canvas = await html2canvas(container, { scale: 2, useCORS: true });
+      document.body.removeChild(container);
 
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(200, 16, 46);
-    const numsText = completedTicket.numbers.map(n => `#${n}`).join('   ');
-    const splitNums = doc.splitTextToSize(numsText, 170);
-    doc.text(splitNums, 20, 150);
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 190;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Certificado de Garantía / Protocolo: ${completedTicket.notaryProtocol}`, 105, 270, { align: "center" });
+      pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+      pdf.save(`Tiquete_Genios_${completedTicket.orderNumber}.pdf`);
 
-    doc.save(`Tiquete_Genios_${completedTicket.orderNumber}.pdf`);
+    } catch (error) {
+      console.error("Error generando PDF visual:", error);
+      alert("Hubo un error al generar el PDF gráfico. Intenta de nuevo.");
+    }
   };
 
   const isFormView = !completedTicket && !isProcessing;
@@ -409,14 +444,18 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
     <>
       {expandedQR && (
         <div className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 transition-all" onClick={() => setExpandedQR(null)}>
-          <button onClick={() => setExpandedQR(null)} className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer">
-            <X className="w-8 h-8" />
+          <button
+            onClick={() => setExpandedQR(null)}
+            className="absolute top-6 right-6 w-12 h-12 bg-black/80 hover:bg-black rounded-full flex items-center justify-center text-white border-2 border-white shadow-2xl transition-all cursor-pointer z-50"
+            title="Cerrar QR"
+          >
+            <X className="w-7 h-7 stroke-[3]" />
           </button>
           <p className="text-white text-xl font-bold uppercase tracking-widest mb-6 animate-pulse text-center">
             Escanea para pagar
           </p>
-          <img src={expandedQR} alt="QR Ampliado" className="w-full max-w-[400px] h-auto rounded-2xl shadow-2xl border-4 border-white object-contain bg-white" onClick={(e) => e.stopPropagation()} />
-          <p className="text-white/60 text-sm mt-6 font-semibold">Toca cualquier parte para cerrar</p>
+          <img src={expandedQR} alt="QR Ampliado" className="w-full max-w-[400px] h-auto rounded-2xl shadow-2xl border-4 border-white object-contain bg-white p-2" onClick={(e) => e.stopPropagation()} />
+          <p className="text-white/70 text-sm mt-6 font-semibold">Toca cualquier parte o presiona atrás para cerrar</p>
         </div>
       )}
 
@@ -585,7 +624,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         </div>
                         <div className="flex items-stretch h-9 gap-[2px] opacity-80" aria-hidden>
                           {BARS.map((w, i) => (
-                            <span key={i} className="bg-[#1D2B22]" style={{ width: w * 1.2 }} />
+                            <span key={i} className="bg-[#1D2B22]" style={{ width: w }} />
                           ))}
                         </div>
                       </div>
